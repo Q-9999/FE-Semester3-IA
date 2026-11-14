@@ -1,4 +1,4 @@
-# FU-EOS Study Portal
+# 
 
 Ứng dụng web tĩnh hỗ trợ ôn tập và làm bài kiểm tra trắc nghiệm cho 5 môn học kỳ 3 tại Đại học FPT.
 
@@ -48,24 +48,3 @@ npm run dev
 
 Sau đó mở trình duyệt tại địa chỉ `http://localhost:3000`.
 
-## 5. Triển khai lên Vercel
-
-### Cách 1: Kết nối qua GitHub
-1. Khởi tạo Git và đẩy mã nguồn trong thư mục này lên GitHub repository:
-   ```bash
-   git init
-   git add .
-   git commit -m 'Initial commit'
-   git branch -M main
-   git remote add origin https://github.com/<username>/<repository>.git
-   git push -u origin main
-   ```
-2. Truy cập https://vercel.com/new và chọn repository vừa tạo.
-3. Giữ nguyên cấu hình mặc định và chọn **Deploy**.
-
-### Cách 2: Sử dụng Vercel CLI
-Chạy lệnh sau tại thư mục dự án:
-
-```bash
-npx vercel --prod
-```
