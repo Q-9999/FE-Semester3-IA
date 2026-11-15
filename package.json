@@ -1,9 +1,10 @@
 {
-  "name": "fu-study-portal",
+  "name": "fu-eos-localhost",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "npx serve . -l 3000 -s",
-    "build": "echo 'Static build ready'"
+    "start": "node server.mjs",
+    "dev": "node server.mjs"
   }
 }

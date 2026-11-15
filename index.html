@@ -1,203 +1,923 @@
 <!DOCTYPE html>
-<html lang="vi" class="dark">
-
+<html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hệ Thống Ôn Thi Kỳ 3 FPT • FU-EOS</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
-    rel="stylesheet" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FU-EOS Kỳ 3 • Ôn Thi Trắc Nghiệm &amp; Mock Exam</title>
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          },
-          colors: {
-            background: '#0b0f19',
-            card: '#111827',
-            border: '#1f2937',
-          }
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem('fu_eos_theme');
+        if (savedTheme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
         }
-      }
-    };
+      } catch (e) {}
+    })();
   </script>
-  <style>
-    body {
-      background-color: #0b0f19;
-      color: #f3f4f6;
-      font-family: 'Inter', system-ui, sans-serif;
-    }
-
-    .xmas-backdrop {
-      background-image:
-        radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12), transparent 35%),
-        radial-gradient(circle at 85% 20%, rgba(245, 158, 11, 0.08), transparent 35%),
-        radial-gradient(circle at 50% 85%, rgba(16, 185, 129, 0.06), transparent 40%);
-    }
-
-    .perspective-1000 {
-      perspective: 1000px;
-    }
-
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: #0b0f19;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 9999px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #475569;
-    }
-
-    @keyframes snowFall {
-      0% {
-        transform: translateY(-10vh) translateX(0);
-        opacity: 0;
-      }
-
-      15% {
-        opacity: 0.7;
-      }
-
-      85% {
-        opacity: 0.7;
-      }
-
-      100% {
-        transform: translateY(105vh) translateX(20px);
-        opacity: 0;
-      }
-    }
-
-    .snowflake {
-      position: fixed;
-      top: -10px;
-      color: rgba(255, 255, 255, 0.35);
-      pointer-events: none;
-      user-select: none;
-      z-index: 5;
-      animation: snowFall linear infinite;
-    }
-  </style>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231d72b8'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
 </head>
+<body>
+  <!-- ========================================================
+       TOP HEADER (BRAND + FUNCTIONAL TABS + CONTROLS)
+       ======================================================== -->
+  <header class="app-topbar">
+    <div class="topbar-inner">
+      <button class="btn-sidebar-toggle" id="sidebarToggleBtn" title="Thu gọn / Mở rộng Sidebar (Ctrl + B)" aria-label="Thu gọn / Mở rộng Sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="18" height="18" x="3" y="3" rx="2"/>
+          <path d="M9 3v18"/>
+          <path d="m14 9 3 3-3 3"/>
+        </svg>
+      </button>
 
-<body
-  class="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col antialiased selection:bg-indigo-500/30 selection:text-indigo-200 xmas-backdrop">
-  <div id="snow-layer" aria-hidden="true"></div>
-
-  <!-- Top Info Banner -->
-  <div
-    class="relative z-20 bg-indigo-950/60 border-b border-indigo-500/20 px-4 py-2 text-center text-xs text-indigo-200 flex flex-wrap items-center justify-center gap-2">
-    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
-    <span>Hệ thống ôn thi 5 môn kỳ 3 FPT (CSD203, DBI202, JPD113, NWC303, IAO202) • <strong
-        id="banner-count">1,594</strong> câu hỏi chuẩn thi có đáp án &amp; giải thích</span>
-  </div>
-
-  <!-- Sticky Navbar -->
-  <header class="sticky top-0 z-30 backdrop-blur-md bg-[#0b0f19]/85 border-b border-slate-800/80">
-    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-      <a href="/" data-route="/" class="flex items-center gap-3 shrink-0 group">
-        <div
-          class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center font-extrabold text-white shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition">
-          FU
+      <div class="topbar-brand" id="logoBtn" title="Về Dashboard tổng quan">
+        <div class="brand-badge">FU3</div>
+        <div class="brand-info">
+          <div class="brand-title">FU-EOS Kỳ 3</div>
+          <div class="brand-sub">5 Môn • 1,594 Câu Hỏi</div>
         </div>
-        <div class="hidden sm:block">
-          <div class="font-bold text-sm tracking-tight text-white flex items-center gap-2">
-            FU-EOS PORTAL
-            <span
-              class="text-[10px] bg-emerald-500/15 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30 font-semibold">OFFLINE
-              READY</span>
-            <span
-              class="text-[10px] bg-indigo-500/15 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30 font-semibold">Copyright@MMQ</span>
-          </div>
-          <p class="text-[11px] text-slate-400">Kỳ 3 FPT • Ngân hàng câu hỏi &amp; Thi thử</p>
-        </div>
-      </a>
+      </div>
 
-      <!-- Navigation Links -->
-      <nav id="main-nav" class="flex items-center gap-1 overflow-x-auto py-1">
-        <a href="/" data-route="/"
-          class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition">
-          <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
-          <span>Tổng quan</span>
-        </a>
-        <a href="/study" data-route="/study"
-          class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition">
-          <i data-lucide="book-open-check" class="w-3.5 h-3.5"></i>
-          <span>Học theo chủ đề</span>
-        </a>
-        <a href="/flashcards" data-route="/flashcards"
-          class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition">
-          <i data-lucide="layers" class="w-3.5 h-3.5"></i>
-          <span>Thẻ ghi nhớ</span>
-        </a>
-        <a href="/questions" data-route="/questions"
-          class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition">
-          <i data-lucide="database" class="w-3.5 h-3.5"></i>
-          <span>Ngân hàng câu hỏi</span>
-        </a>
-        <a href="/exam" data-route="/exam"
-          class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition">
-          <i data-lucide="timer" class="w-3.5 h-3.5"></i>
-          <span>Thi thử</span>
-        </a>
+      <!-- Functional Navigation Modes -->
+      <nav class="topbar-modes-nav" aria-label="Chế độ học tập">
+        <div class="tab-slider-pill" id="tabSliderPill"></div>
+        <button class="topbar-tab-btn tab-btn active" id="tabStats" data-mode="stats">
+          <span class="tab-text">Dashboard</span>
+        </button>
+        <button class="topbar-tab-btn tab-btn" id="tabStudy" data-mode="study">
+          <span class="tab-text">Study</span>
+        </button>
+        <button class="topbar-tab-btn tab-btn" id="tabExam" data-mode="exam">
+          <span class="tab-text">Thi thử</span>
+        </button>
+        <button class="topbar-tab-btn tab-btn" id="tabFeTest" data-mode="fetest">
+          <span class="tab-text">FE - Test</span>
+        </button>
+        <button class="topbar-tab-btn tab-btn" id="tabFlashcards" data-mode="flashcards">
+          <span class="tab-text">Flashcards</span>
+        </button>
+        <button class="topbar-tab-btn tab-btn" id="tabMistakes" data-mode="mistakes">
+          <span class="tab-text">Câu sai</span>
+          <span class="tab-pill-badge badge-danger" id="mistakesTabCount">0</span>
+        </button>
       </nav>
 
-      <!-- Right Actions -->
-      <div class="flex items-center gap-2 shrink-0">
-        <button id="btn-toggle-snow" title="Bật/tắt hiệu ứng tuyết rơi"
-          class="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition">
-          <i data-lucide="snowflake" class="w-4 h-4"></i>
+      <!-- Quick Action Tools -->
+      <div class="topbar-actions">
+        <div class="search-box-wrapper">
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="searchInput" class="search-input" placeholder="Tìm kiếm (Ctrl + K)...">
+        </div>
+        <button class="btn btn-outline btn-sm topbar-tool-btn" id="starredBtn" title="Xem danh sách câu đã lưu">
+          Đã lưu (<span id="starredCount">0</span>)
         </button>
-        <button id="btn-reset-progress" title="Đặt lại tiến độ học"
-          class="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-red-500/40 text-slate-400 hover:text-red-400 transition">
-          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+        <button class="btn btn-outline btn-sm" id="themeToggleBtn" title="Chuyển chế độ Sáng / Tối">Tối</button>
+        <button class="btn-icon mobile-menu-btn" id="mobileSidebarToggle" title="Mở danh mục Môn học" aria-label="Mở danh mục Môn học">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </button>
       </div>
     </div>
+
+    <!-- Global Learning & Exam Progress Bar -->
+    <div class="global-progress-bar-wrap" id="globalProgressWrap">
+      <div class="global-progress-bar-fill" id="globalProgressBar" style="width: 0%;"></div>
+    </div>
   </header>
 
-  <!-- Main Content -->
-  <main id="app-root" class="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 py-6">
-    <div id="loading-screen" class="min-h-[60vh] flex flex-col items-center justify-center gap-3">
-      <div class="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
-      <p class="text-xs text-slate-400 font-medium animate-pulse">Đang nạp 1,594 câu hỏi từ cơ sở dữ liệu cục bộ...</p>
+  <!-- ========================================================
+       MAIN APP WORKSPACE (LEFT SIDEBAR + CONTENT PANE)
+       ======================================================== -->
+  <div class="app-workspace">
+    <!-- LEFT SIDEBAR: SUBJECTS DIRECTORY -->
+    <aside class="app-sidebar" id="appSidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title-group">
+          <div class="sidebar-section-title">Danh mục Môn học</div>
+          <div class="sidebar-section-sub" id="sidebarBankMeta">FPT Semester 3 • 1,594 câu</div>
+        </div>
+        <button class="sidebar-close-btn" id="sidebarCloseBtn" title="Đóng thanh danh mục" aria-label="Đóng thanh danh mục">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <nav class="sidebar-modules-list" id="modulesBar">
+        <button class="sidebar-mod-item module-pill active" data-mod="all">
+          <div class="mod-details">
+            <span class="mod-title">Toàn bộ Kỳ 3</span>
+            <span class="mod-desc">Tất cả 5 môn học</span>
+          </div>
+          <span class="module-badge-count" id="count-all">1594</span>
+        </button>
+
+        <div class="sidebar-section-label">Các học phần</div>
+
+        <button class="sidebar-mod-item module-pill" data-mod="CSD203">
+          <div class="mod-details">
+            <span class="mod-title">CSD203</span>
+            <span class="mod-desc">Cấu trúc dữ liệu &amp; Giải thuật</span>
+          </div>
+          <span class="module-badge-count" id="count-CSD203">409</span>
+        </button>
+
+        <button class="sidebar-mod-item module-pill" data-mod="DBI202">
+          <div class="mod-details">
+            <span class="mod-title">DBI202</span>
+            <span class="mod-desc">Cơ sở dữ liệu SQL Server</span>
+          </div>
+          <span class="module-badge-count" id="count-DBI202">374</span>
+        </button>
+
+        <button class="sidebar-mod-item module-pill" data-mod="IAO202">
+          <div class="mod-details">
+            <span class="mod-title">IAO202</span>
+            <span class="mod-desc">Vận hành An toàn thông tin</span>
+          </div>
+          <span class="module-badge-count" id="count-IAO202">316</span>
+        </button>
+
+        <button class="sidebar-mod-item module-pill" data-mod="NWC303">
+          <div class="mod-details">
+            <span class="mod-title">NWC303</span>
+            <span class="mod-desc">Mạng máy tính</span>
+          </div>
+          <span class="module-badge-count" id="count-NWC303">269</span>
+        </button>
+
+        <button class="sidebar-mod-item module-pill" data-mod="JPD113">
+          <div class="mod-details">
+            <span class="mod-title">JPD113</span>
+            <span class="mod-desc">Tiếng Nhật cơ sở 3</span>
+          </div>
+          <span class="module-badge-count" id="count-JPD113">226</span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- Sidebar Backdrop for Mobile Overlay -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- RIGHT MAIN CONTENT CONTAINER -->
+    <main class="app-main" id="appMain">
+      <!-- Safe Exam Browser (SEB) Sticky Status Bar for Exam & FE-Test -->
+      <div class="seb-sticky-bar" id="sebStickyBar" style="display: none;">
+        <div class="seb-bar-inner">
+          <div class="seb-badge-group">
+            <span class="seb-badge-pill">EOS / SEB Mode</span>
+            <span class="seb-exam-name" id="sebExamName">Thi Thử Trực Tuyến</span>
+          </div>
+          <div class="seb-progress-group">
+            <span class="seb-progress-text" id="sebProgressText">Câu 1 / 50 (0%)</span>
+            <div class="seb-progress-track">
+              <div class="seb-progress-fill" id="sebProgressFill" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="seb-actions-group">
+            <div class="seb-timer-badge" id="sebTimerBadge">
+              <span class="timer-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </span>
+              <span id="sebTimerDisplay">60:00</span>
+            </div>
+            <button class="btn btn-outline btn-xs" id="sebPauseBtn">Tạm dừng</button>
+            <button class="btn btn-success btn-xs" id="sebSubmitBtn">Nộp bài</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1. STUDY VIEW -->
+      <section id="studyView" class="view-panel" style="display: none;">
+        <div class="study-banner">
+          <div class="banner-info">
+            <h2 id="studyModuleTitle">FPT Semester 3: Toàn bộ 5 Môn</h2>
+            <p id="studyModuleDesc">1,594 câu hỏi trắc nghiệm &amp; giải thích chi tiết theo chuẩn ITExamAnswers.</p>
+          </div>
+          <div class="study-controls">
+            <button class="btn btn-outline btn-sm" id="toggleAnswersBtn">
+              <span id="toggleAnswersText">Ẩn đáp án</span>
+            </button>
+            <button class="btn btn-outline btn-sm" id="toggleInteractiveBtn" title="Bấm chọn đáp án để tự kiểm tra trước khi xem đáp án đúng">
+              Chế độ: Xem đáp án
+            </button>
+            <button class="btn btn-outline btn-sm" id="filterStarredOnlyBtn">
+              Hiện câu đã lưu
+            </button>
+            <button class="btn btn-primary btn-sm" id="startExamFromStudyBtn">
+              Thi thử môn này
+            </button>
+          </div>
+        </div>
+
+        <!-- Secondary Filter Toolbar: Topic + Difficulty + Quick Reset -->
+        <div class="study-filter-toolbar">
+          <div class="study-filter-group">
+            <label for="studyTopicSelect" class="study-filter-label">Chủ đề:</label>
+            <select id="studyTopicSelect" class="study-select">
+              <option value="ALL">Tất cả chủ đề</option>
+            </select>
+          </div>
+          <div class="study-filter-group">
+            <label for="studyDifficultySelect" class="study-filter-label">Độ khó:</label>
+            <select id="studyDifficultySelect" class="study-select">
+              <option value="ALL">Tất cả độ khó</option>
+              <option value="Easy">Cơ bản (Easy)</option>
+              <option value="Medium">Trung bình (Medium)</option>
+              <option value="Hard">Nâng cao (Hard)</option>
+            </select>
+          </div>
+          <div class="study-filter-spacer"></div>
+          <span class="study-filter-label" id="studyFilterSummary">Hiển thị 0 / 0 câu</span>
+          <button class="btn btn-outline btn-xs" id="studyResetFiltersBtn" type="button">Đặt lại lọc</button>
+        </div>
+
+        <!-- Floating Question Navigation Rail -->
+        <div class="study-nav-rail" id="studyNavRail">
+          <button class="study-nav-rail-toggle" id="studyNavRailToggle" title="Đóng / Mở bảng điều hướng câu hỏi">
+            <span class="nav-rail-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            </span>
+            <span class="nav-rail-label">Số câu</span>
+            <span class="nav-rail-badge" id="studyNavRailCount">0</span>
+          </button>
+          <div class="study-nav-rail-panel" id="studyNavRailPanel">
+            <div class="study-nav-rail-header">
+              <span class="rail-header-title">Điều hướng câu hỏi</span>
+              <button class="rail-close-btn" id="studyNavRailCloseBtn" title="Đóng" aria-label="Đóng">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+            <div class="study-nav-rail-legend">
+              <span class="rail-legend-item"><span class="legend-dot dot-active"></span> Đang xem</span>
+              <span class="rail-legend-item">
+                <span class="legend-dot dot-starred">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                </span>
+                Đã lưu
+              </span>
+            </div>
+            <div class="study-nav-rail-grid" id="studyNavRailGrid"></div>
+          </div>
+        </div>
+
+        <div class="study-list" id="studyQuestionsList">
+          <!-- Questions dynamically injected here -->
+        </div>
+      </section>
+
+      <!-- 2. EXAM VIEW -->
+      <section id="examView" class="view-panel" style="display: none;">
+        <div class="exam-layout">
+          <div class="exam-header-meta">
+            <div class="exam-header-top">
+              <div>
+                <h2 class="exam-title-big" id="examCurrentTitle">Thi thử chuẩn EOS - Kỳ 3 FPT</h2>
+                <div class="exam-meta-row">
+                  <span>FU-EOS Simulator</span>
+                  <span id="examMetaDuration">Thời gian: 60 phút</span>
+                  <span id="examMetaSubject">Toàn bộ Kỳ 3</span>
+                  <span id="examQuestionsCountBadge">50 Câu</span>
+                </div>
+              </div>
+              <div class="exam-header-actions">
+                <div class="timer-badge normal" id="examTimerBadge">Thời gian: <span id="timerDisplay">60:00</span></div>
+                <button class="btn btn-outline btn-sm" id="timerPauseBtn" title="Tạm dừng / Tiếp tục">Tạm dừng</button>
+                <button class="btn btn-outline btn-sm" id="examSettingsBtn" title="Cài đặt đề thi">Cài đặt</button>
+              </div>
+            </div>
+            <div class="exam-info-banner">
+              <div>
+                <strong>Hướng dẫn:</strong> Chọn đáp án cho từng câu hỏi. Sử dụng bảng số bên trái để chuyển nhanh giữa các câu hỏi. Bấm <strong>Nộp bài</strong> để chấm điểm thang 1000 (Mốc Pass 750).
+              </div>
+              <div>
+                <button class="btn btn-success btn-sm" id="submitExamTopBtn">Nộp bài</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="exam-workspace-split">
+            <!-- Left: Question Grid Navigation Palette -->
+            <aside class="exam-sidebar-palette">
+              <div class="grid-container">
+                <div class="exam-palette-header">
+                  <span class="exam-palette-title">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="3" width="7" height="7"></rect>
+                      <rect x="14" y="3" width="7" height="7"></rect>
+                      <rect x="14" y="14" width="7" height="7"></rect>
+                      <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Bảng câu hỏi
+                  </span>
+                  <span class="exam-palette-sub" id="examPaletteSummary">Câu 1/50</span>
+                </div>
+                <div class="question-numbers-grid" id="examGrid"></div>
+                <div class="grid-legend">
+                  <div class="legend-item"><div class="legend-box legend-answered"></div> <span>Đã chọn (<span id="countAnswered">0</span>)</span></div>
+                  <div class="legend-item"><div class="legend-box legend-review"></div> <span>Xem lại (<span id="countReview">0</span>)</span></div>
+                  <div class="legend-item"><div class="legend-box legend-unanswered"></div> <span>Chưa làm (<span id="countUnanswered">0</span>)</span></div>
+                  <div class="legend-item"><div class="legend-box legend-active"></div> <span>Đang xem</span></div>
+                </div>
+              </div>
+            </aside>
+
+            <!-- Right: Active Question Card -->
+            <main class="exam-active-panel">
+              <div class="exam-question-card" id="examQuestionCard">
+                <div class="exam-q-header">
+                  <div class="exam-q-title" id="examQTitle">1. Question</div>
+                  <div class="exam-q-points" id="examQSubjectTag">CSD203 • 1 pt</div>
+                </div>
+                <div class="exam-q-body" id="examQText"></div>
+                <div id="examQCodeContainer"></div>
+                <div id="examQImageContainer" class="study-image" style="display: none;"></div>
+                <div class="exam-options-container" id="examOptionsList"></div>
+                <div id="examInstantFeedback" class="exam-instant-feedback" style="display: none;"></div>
+                <div class="exam-actions-bar">
+                  <div class="exam-actions-left">
+                    <button class="btn btn-outline btn-sm" id="btnMarkReview">Đánh dấu xem lại</button>
+                    <button class="btn btn-outline btn-sm" id="btnClearAnswer">Xóa lựa chọn</button>
+                  </div>
+                  <div class="exam-nav-group">
+                    <button class="btn btn-outline" id="btnPrevQuestion">Câu trước</button>
+                    <button class="btn btn-primary" id="btnNextQuestion">Câu tiếp theo</button>
+                    <button class="btn btn-success" id="btnSubmitExam">Nộp bài</button>
+                  </div>
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. EXAM RESULTS VIEW -->
+      <section id="resultsView" class="view-panel" style="display: none;">
+        <div class="cisco-grade-card">
+          <div class="cisco-grade-left">
+            <div class="cisco-grade-tags">
+              <span class="cisco-tag-primary">FPTU EOS / FE Grading</span>
+              <span class="cisco-tag-muted" id="resultTitle">FU-EOS Kỳ 3</span>
+            </div>
+            <div class="cisco-score-row">
+              <div class="cisco-score-main" id="scoreCircle">
+                <span class="cisco-score-pts" id="scoreScaledPts">840</span>
+                <span class="cisco-score-max">/ 1000</span>
+              </div>
+              <span class="cisco-pass-pill" id="scoreBadge">Đạt (Pass) • Chuẩn &ge; 750</span>
+            </div>
+            <div class="cisco-cap-bar-wrap">
+              <div class="cisco-cap-bar-head">
+                <span id="resultFeedback">Tỷ lệ chuẩn hóa năng lực</span>
+                <strong id="scorePercent">84%</strong>
+              </div>
+              <div class="cisco-cap-track">
+                <div class="cisco-cap-fill" id="scoreScaleBarFill" style="width: 84%;"></div>
+                <div class="cisco-cap-marker" style="left: 75%;" title="Mốc đạt chuẩn: 750/1000 (75%)"></div>
+              </div>
+              <div class="cisco-cap-foot">
+                <span>0 pt (Min)</span>
+                <span class="cisco-cap-pass-lbl">Điểm đỗ: 750 (75%)</span>
+                <span>1000 pt (Max)</span>
+              </div>
+            </div>
+          </div>
+          <div class="cisco-grade-right">
+            <div class="cisco-stat-tile tile-correct">
+              <div class="tile-head"><span>Đúng</span></div>
+              <div class="tile-val"><span id="resCorrect">0</span><small class="res-total-sub">/50</small></div>
+              <div class="tile-sub" id="resCorrectPctSub">Chính xác</div>
+            </div>
+            <div class="cisco-stat-tile tile-wrong">
+              <div class="tile-head"><span>Sai</span></div>
+              <div class="tile-val"><span id="resWrong">0</span><small class="res-total-sub">/50</small></div>
+              <div class="tile-sub" id="resWrongPctSub">Cần ôn lại</div>
+            </div>
+            <div class="cisco-stat-tile tile-skipped">
+              <div class="tile-head"><span>Bỏ qua</span></div>
+              <div class="tile-val"><span id="resSkipped">0</span><small class="res-total-sub">/50</small></div>
+              <div class="tile-sub">Chưa chọn</div>
+            </div>
+            <div class="cisco-stat-tile tile-time">
+              <div class="tile-head"><span>Thời gian</span></div>
+              <div class="tile-val" id="resTime">00:00</div>
+              <div class="tile-sub" id="resTimeSub">Hoàn thành</div>
+            </div>
+          </div>
+        </div>
+        <div class="result-actions-bar">
+          <button class="btn btn-primary btn-sm" id="btnRetakeExam">Làm lại đề này</button>
+          <button class="btn btn-warning btn-sm" id="btnRetryWrongOnly">Làm lại các câu sai</button>
+          <button class="btn btn-outline btn-sm" id="btnReviewAllAnswers">Xem chi tiết đáp án bên dưới</button>
+        </div>
+        <div class="study-list" id="examReviewList"></div>
+      </section>
+
+      <!-- 4. MISTAKES VIEW -->
+      <section id="mistakesView" class="view-panel" style="display: none;">
+        <div class="study-banner">
+          <div class="banner-info">
+            <h2>Câu làm sai</h2>
+            <p id="mistakesSummaryText">Bạn chưa có câu nào làm sai.</p>
+          </div>
+          <div class="study-controls">
+            <button class="btn btn-primary btn-sm" id="btnTestMistakesOnly">Luyện lại các câu sai</button>
+            <button class="btn btn-outline btn-sm" id="btnClearAllMistakes">Xóa danh sách</button>
+          </div>
+        </div>
+        <div class="study-list" id="mistakesQuestionsList"></div>
+      </section>
+
+      <!-- 5. FLASHCARDS VIEW -->
+      <section id="flashcardsView" class="view-panel" style="display: none;">
+        <div class="study-banner">
+          <div class="banner-info">
+            <h2 id="fcTitle">Flashcards • Ghi nhớ chủ động</h2>
+            <p id="fcSubTitle">Lật thẻ để xem đáp án đúng và giải thích. Hỗ trợ phím tắt Space (lật thẻ), ← / → (chuyển thẻ).</p>
+          </div>
+          <div class="study-controls">
+            <button class="btn btn-outline btn-sm" id="fcShuffleBtn">Xáo trộn thẻ</button>
+            <button class="btn btn-outline btn-sm" id="fcMistakesOnlyBtn">Chỉ thẻ hay sai</button>
+          </div>
+        </div>
+
+        <div class="fc-workspace">
+          <div class="fc-toolbar">
+            <div class="study-filter-group">
+              <label for="fcSubjectSelect" class="study-filter-label">Môn học:</label>
+              <select id="fcSubjectSelect" class="study-select">
+                <option value="all">Toàn bộ Kỳ 3 (5 môn)</option>
+                <option value="CSD203">CSD203 (409 câu)</option>
+                <option value="DBI202">DBI202 (374 câu)</option>
+                <option value="IAO202">IAO202 (316 câu)</option>
+                <option value="NWC303">NWC303 (269 câu)</option>
+                <option value="JPD113">JPD113 (226 câu)</option>
+              </select>
+            </div>
+            <div class="study-filter-group">
+              <label for="fcTopicSelect" class="study-filter-label">Chủ đề:</label>
+              <select id="fcTopicSelect" class="study-select">
+                <option value="ALL">Tất cả chủ đề</option>
+              </select>
+            </div>
+            <span class="dash-bench-tag" id="fcCounterLabel">Thẻ 0 / 0</span>
+          </div>
+
+          <div class="fc-progress-track">
+            <div class="fc-progress-fill" id="fcProgressFill"></div>
+          </div>
+
+          <div id="fcCardHost"></div>
+
+          <div class="fc-actions-bar">
+            <div class="fc-btn-group">
+              <button class="btn btn-outline btn-sm" id="fcPrevBtn">← Thẻ trước</button>
+              <button class="btn btn-primary btn-sm" id="fcFlipBtn">Lật thẻ (Space)</button>
+              <button class="btn btn-outline btn-sm" id="fcNextBtn">Thẻ tiếp →</button>
+            </div>
+            <div class="fc-btn-group">
+              <button class="btn btn-warning btn-sm" id="fcNeedReviewBtn">Cần ôn lại</button>
+              <button class="btn btn-success btn-sm" id="fcMasteredBtn">Đã nhớ ✓</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. DASHBOARD & STATS VIEW -->
+      <section id="statsView" class="view-panel">
+        <div class="dash-hero-card">
+          <div class="dash-hero-info">
+            <div class="dash-sys-tag">FPT University • Semester 3 • 5 Subjects Bank</div>
+            <h2 class="dash-hero-title">Dashboard tổng quan học tập</h2>
+            <p class="dash-hero-desc" id="dashHeroDesc">Theo dõi tiến độ câu hỏi đã làm, lịch sử hoạt động mỗi ngày và mức độ thành thạo từng môn học Kỳ 3.</p>
+            <div class="dash-overall-progress">
+              <div class="dash-overall-meta">
+                <span>Tiến độ hoàn thành (Mốc Pass 75%: 1,196 / 1,594 câu)</span>
+                <strong id="dashOverallPctText">0% (0 / 1,594 câu)</strong>
+              </div>
+              <div class="dash-overall-track">
+                <div class="dash-overall-fill" id="dashOverallBar" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="dash-hero-actions">
+            <button class="btn btn-primary btn-sm" id="btnDashQuickFe">Thi nhanh FE (50 câu)</button>
+            <button class="btn btn-outline btn-sm" id="btnResetAllStats">Đặt lại thống kê</button>
+          </div>
+        </div>
+
+        <!-- 4 Core KPI Cards -->
+        <div class="dash-kpi-grid">
+          <div class="dash-kpi-card">
+            <div class="dash-kpi-top">
+              <span class="dash-kpi-label">Tổng câu đã làm</span>
+              <span class="dash-kpi-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+              </span>
+            </div>
+            <div class="dash-kpi-val"><span id="dashKpiPracticed">0</span> <small id="dashKpiTotal">/ 1,594 câu</small></div>
+            <div class="dash-kpi-foot">
+              <span class="dash-kpi-badge neutral" id="dashKpiPctBadge">0% (Mốc Pass: 1,196 câu)</span>
+              <span class="dash-kpi-sub" id="dashKpiUnanswered">Còn 1,594 câu chưa làm</span>
+            </div>
+          </div>
+
+          <div class="dash-kpi-card">
+            <div class="dash-kpi-top">
+              <span class="dash-kpi-label">Điểm trung bình thi thử</span>
+              <span class="dash-kpi-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              </span>
+            </div>
+            <div class="dash-kpi-val"><span id="dashKpiAvgPts">--</span> <small>/ 1000</small></div>
+            <div class="dash-kpi-foot">
+              <span class="dash-kpi-badge neutral" id="dashKpiPassStatus">Chuẩn Pass &ge; 750 (75%)</span>
+              <span class="dash-kpi-sub" id="dashKpiTotalTests">0 lượt thi</span>
+            </div>
+          </div>
+
+          <div class="dash-kpi-card">
+            <div class="dash-kpi-top">
+              <span class="dash-kpi-label">Chuỗi học liên tục</span>
+              <span class="dash-kpi-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </span>
+            </div>
+            <div class="dash-kpi-val"><span id="dashKpiStreak">0</span> <small>ngày liên tiếp</small></div>
+            <div class="dash-kpi-foot">
+              <div class="dash-streak-dots" id="dashStreakDots"></div>
+              <span class="dash-kpi-sub" id="dashKpiStreakRecord">Hôm nay: 0 câu</span>
+            </div>
+          </div>
+
+          <div class="dash-kpi-card">
+            <div class="dash-kpi-top">
+              <span class="dash-kpi-label">Cần củng cố</span>
+              <span class="dash-kpi-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </span>
+            </div>
+            <div class="dash-kpi-val"><span id="dashKpiMistakes" class="text-danger">0</span> <small>câu làm sai</small></div>
+            <div class="dash-kpi-foot">
+              <span class="dash-kpi-sub" id="dashKpiWeakMod">Chưa có câu sai</span>
+              <button class="btn-link-action" id="btnDashPracticeMistakes">Luyện ngay &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2-Column Main Dashboard Body -->
+        <div class="dash-main-grid">
+          <!-- Left Column: Subject Mastery + Daily/Exam History -->
+          <div class="dash-col-main">
+            <div class="dash-panel-card">
+              <div class="dash-panel-head">
+                <div>
+                  <h3 class="dash-panel-title">Tiến độ &amp; mức độ thành thạo Môn học</h3>
+                  <p class="dash-panel-sub">Theo dõi năng lực từng môn Kỳ 3 (CSD203, DBI202, IAO202, NWC303, JPD113) và vùng dưới 75%.</p>
+                </div>
+                <span class="dash-bench-tag">FU Semester 3 Benchmark</span>
+              </div>
+              <div class="dash-module-list" id="moduleStatsGrid"></div>
+            </div>
+
+            <div class="dash-panel-card">
+              <div class="dash-panel-head">
+                <div>
+                  <h3 class="dash-panel-title">Lịch sử hoạt động mỗi ngày</h3>
+                  <p class="dash-panel-sub">Tự động ghi nhận số câu đã luyện và đề thi hoàn thành theo từng ngày.</p>
+                </div>
+                <span class="dash-bench-tag" id="dashActiveDaysCount">0 ngày hoạt động</span>
+              </div>
+              <div class="dash-table-wrap">
+                <table class="dash-table">
+                  <thead>
+                    <tr>
+                      <th>Ngày</th>
+                      <th>Số câu đã làm</th>
+                      <th>Đề hoàn thành</th>
+                      <th>Điểm cao nhất</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashDailyHistoryBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="dash-panel-card">
+              <div class="dash-panel-head">
+                <div>
+                  <h3 class="dash-panel-title">Lịch sử thi &amp; luyện gần đây</h3>
+                  <p class="dash-panel-sub">Các lượt làm đề FE-Test và bài thi thử theo môn học mới nhất.</p>
+                </div>
+              </div>
+              <div class="dash-table-wrap">
+                <table class="dash-table">
+                  <thead>
+                    <tr>
+                      <th>Tên đề bài</th>
+                      <th>Thời điểm</th>
+                      <th>Điểm số</th>
+                      <th>Kết quả</th>
+                      <th>Chi tiết</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashRecentAttemptsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Quick Shortcuts + Score Trend Chart -->
+          <div class="dash-col-side">
+            <div class="dash-panel-card">
+              <div class="dash-panel-head">
+                <h3 class="dash-panel-title">Lối tắt hành động nhanh</h3>
+              </div>
+              <div class="dash-shortcuts-grid">
+                <button class="dash-shortcut-btn" id="dashShortcutCustomFe">
+                  <div class="shortcut-top">
+                    <span class="shortcut-badge">FE-Test</span>
+                    <span>&rarr;</span>
+                  </div>
+                  <div class="shortcut-title">Tạo đề tùy chỉnh</div>
+                  <div class="shortcut-desc">Chọn môn học, 20-60 câu, thời gian và bộ lọc câu hỏi.</div>
+                </button>
+                <button class="dash-shortcut-btn" id="dashShortcutPractice">
+                  <div class="shortcut-top">
+                    <span class="shortcut-badge badge-green">Luyện tập</span>
+                    <span>&rarr;</span>
+                  </div>
+                  <div class="shortcut-title">Luyện tập tức thì</div>
+                  <div class="shortcut-desc">Hiện đáp án và giải thích ngay sau mỗi câu trả lời.</div>
+                </button>
+                <button class="dash-shortcut-btn" id="dashShortcutFlashcards">
+                  <div class="shortcut-top">
+                    <span class="shortcut-badge">Flashcards</span>
+                    <span>&rarr;</span>
+                  </div>
+                  <div class="shortcut-title">Luyện thẻ ghi nhớ</div>
+                  <div class="shortcut-desc">Ôn nhanh khái niệm &amp; câu hỏi theo từng môn và chủ đề.</div>
+                </button>
+                <button class="dash-shortcut-btn" id="dashShortcutMistakes">
+                  <div class="shortcut-top">
+                    <span class="shortcut-badge badge-danger">Củng cố</span>
+                    <span>&rarr;</span>
+                  </div>
+                  <div class="shortcut-title">Ôn tập câu làm sai</div>
+                  <div class="shortcut-desc">Tập trung xử lý dứt điểm các câu trả lời sai.</div>
+                </button>
+              </div>
+            </div>
+
+            <div class="dash-panel-card">
+              <div class="dash-panel-head">
+                <div>
+                  <h3 class="dash-panel-title">Xu hướng điểm số</h3>
+                  <p class="dash-panel-sub">Biểu đồ điểm số (thang 1000) qua các lần thi gần nhất so với mốc đỗ (750).</p>
+                </div>
+                <span class="dash-trend-delta" id="dashTrendDelta">--</span>
+              </div>
+              <div class="dash-chart-box" id="dashScoreTrendBox"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. FE - TEST VIEW -->
+      <section id="fetestView" class="view-panel" style="display: none;">
+        <div class="fetest-workspace-grid">
+          <!-- Left: Builder Configurator -->
+          <div class="fetest-builder-card">
+            <div class="fetest-builder-head">
+              <div>
+                <h2 class="fetest-builder-title">Tạo đề FE - Test tùy chỉnh</h2>
+                <p class="fetest-builder-sub">Tùy chỉnh môn học, chế độ ôn tập, số câu hỏi, thời gian và bộ lọc trước khi bắt đầu.</p>
+              </div>
+            </div>
+
+            <!-- 0. Môn học -->
+            <div class="fetest-cfg-block">
+              <div class="fetest-cfg-label-row">
+                <span class="fetest-cfg-label">Phạm vi môn học</span>
+                <span class="fetest-cfg-val" id="feSubjectSummaryText">Toàn bộ Kỳ 3</span>
+              </div>
+              <select id="feSubjectSelect" class="modal-select-field">
+                <option value="all">Toàn bộ Kỳ 3 (1,594 câu)</option>
+                <option value="CSD203">CSD203 - Cấu trúc dữ liệu &amp; Giải thuật (409 câu)</option>
+                <option value="DBI202">DBI202 - Cơ sở dữ liệu SQL Server (374 câu)</option>
+                <option value="IAO202">IAO202 - Vận hành An toàn thông tin (316 câu)</option>
+                <option value="NWC303">NWC303 - Mạng máy tính (269 câu)</option>
+                <option value="JPD113">JPD113 - Tiếng Nhật cơ sở 3 (226 câu)</option>
+              </select>
+            </div>
+
+            <!-- 1. Chế độ ôn tập -->
+            <div class="fetest-cfg-block">
+              <div class="fetest-cfg-label-row">
+                <span class="fetest-cfg-label">Chế độ ôn tập</span>
+                <span class="fetest-cfg-val" id="feModeSummaryText">FE</span>
+              </div>
+              <div class="fetest-mode-grid" id="feModeGroup">
+                <button type="button" class="fetest-mode-card" data-femode="practice" id="feModePracticeBtn">
+                  <div class="mode-card-top">
+                    <span class="mode-card-title">Luyện tập</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                  </div>
+                  <p class="mode-card-desc">Hiện đáp án và giải thích ngay sau mỗi câu trả lời.</p>
+                </button>
+                <button type="button" class="fetest-mode-card active" data-femode="exam" id="feModeExamBtn">
+                  <div class="mode-card-top">
+                    <span class="mode-card-title">FE</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </div>
+                  <p class="mode-card-desc">SEB, chấm điểm khi nộp bài</p>
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. Số lượng câu hỏi -->
+            <div class="fetest-cfg-block">
+              <div class="fetest-cfg-label-row">
+                <span class="fetest-cfg-label">Số lượng câu hỏi</span>
+                <span class="fetest-cfg-val" id="feCountSummaryText">50 câu (Chuẩn FE)</span>
+              </div>
+              <div class="fetest-seg-group" id="feCountBtnGroup">
+                <button type="button" class="fetest-seg-btn" data-qcount="20">20</button>
+                <button type="button" class="fetest-seg-btn" data-qcount="40">40</button>
+                <button type="button" class="fetest-seg-btn active" data-qcount="50">50 (FE)</button>
+                <button type="button" class="fetest-seg-btn" data-qcount="60">60</button>
+                <button type="button" class="fetest-seg-btn" data-qcount="custom">Custom</button>
+              </div>
+              <div class="fetest-slider-row">
+                <input type="range" id="feCountSlider" class="fetest-range" min="5" max="1594" value="50">
+                <div class="fetest-custom-num-wrap">
+                  <input type="number" id="feCountCustomInput" class="fetest-num-input" min="1" max="1594" value="50">
+                  <span>câu</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Thời gian làm bài -->
+            <div class="fetest-cfg-block">
+              <div class="fetest-cfg-label-row">
+                <span class="fetest-cfg-label">Thời gian làm bài</span>
+                <span class="fetest-cfg-val" id="feTimerSummaryText">60 phút</span>
+              </div>
+              <div class="fetest-seg-group" id="feTimerBtnGroup">
+                <button type="button" class="fetest-seg-btn" data-timer="30">30p</button>
+                <button type="button" class="fetest-seg-btn" data-timer="45">45p</button>
+                <button type="button" class="fetest-seg-btn active" data-timer="60">60p</button>
+                <button type="button" class="fetest-seg-btn" data-timer="custom">Custom</button>
+                <button type="button" class="fetest-seg-btn" data-timer="0">Không giới hạn</button>
+              </div>
+              <div class="fetest-custom-timer-row" id="feCustomTimerWrap" style="display: none;">
+                <label for="feTimerCustomInput">Nhập số phút tùy chỉnh:</label>
+                <div class="fetest-custom-num-wrap">
+                  <input type="number" id="feTimerCustomInput" class="fetest-num-input" min="1" max="300" value="60">
+                  <span>phút</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Bộ lọc câu hỏi -->
+            <div class="fetest-cfg-block">
+              <div class="fetest-cfg-label-row">
+                <span class="fetest-cfg-label">Bộ lọc câu hỏi</span>
+                <span class="fetest-cfg-sub" id="fePoolAvailableCount">Khả dụng: 1,594 câu</span>
+              </div>
+              <div class="fetest-filter-grid">
+                <label class="fetest-check-card">
+                  <input type="checkbox" id="feFilterMistakes">
+                  <span>Câu làm sai (<strong id="feFilterMistakesCount">0</strong>)</span>
+                </label>
+                <label class="fetest-check-card">
+                  <input type="checkbox" id="feFilterUnanswered">
+                  <span>Câu chưa làm (<strong id="feFilterUnansweredCount">1594</strong>)</span>
+                </label>
+                <label class="fetest-check-card">
+                  <input type="checkbox" id="feFilterStarred">
+                  <span>Câu đã lưu sao (<strong id="feFilterStarredCount">0</strong>)</span>
+                </label>
+                <label class="fetest-check-card">
+                  <input type="checkbox" id="feFilterShuffle" checked>
+                  <span>Xáo trộn câu &amp; đáp án</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="fetest-builder-footer">
+              <button class="btn btn-primary fetest-start-btn" id="btnCreateFeTest">
+                Tạo &amp; bắt đầu làm đề
+              </button>
+            </div>
+          </div>
+
+          <!-- Right: Saved FE-Tests & History Column -->
+          <div class="fetest-history-col">
+            <div class="fe-test-stats-grid">
+              <div class="stat-card fe-stat-card">
+                <div class="fe-stat-label">Tổng số đề đã tạo</div>
+                <div class="fe-stat-val fe-stat-val-primary" id="feTestTotalCreated">0</div>
+              </div>
+              <div class="stat-card fe-stat-card">
+                <div class="fe-stat-label">Số đề hoàn thành</div>
+                <div class="fe-stat-val fe-stat-val-success" id="feTestCompletedCount">0</div>
+              </div>
+              <div class="stat-card fe-stat-card">
+                <div class="fe-stat-label">Điểm cao nhất</div>
+                <div class="fe-stat-val fe-stat-val-warning" id="feTestHighestScore">--</div>
+              </div>
+            </div>
+            <div class="fetest-list-header">
+              <h3 class="fetest-list-heading">Danh sách đề đã tạo &amp; lịch sử</h3>
+              <button class="btn btn-outline btn-xs" id="btnClearFeTests">Xóa lịch sử đề</button>
+            </div>
+            <div class="fe-test-grid fe-test-list-wrap" id="feTestListContainer"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Submit Exam Confirmation Modal -->
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal-dialog">
+      <div class="modal-title">Xác nhận nộp bài</div>
+      <p id="submitModalSummary">Bạn có chắc chắn muốn nộp bài thi không?</p>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="btnCancelSubmit">Tiếp tục làm bài</button>
+        <button class="btn btn-success" id="btnConfirmSubmit">Đồng ý nộp bài</button>
+      </div>
     </div>
-  </main>
+  </div>
 
-  <!-- Footer -->
-  <footer class="relative z-10 border-t border-slate-800/80 py-6 text-center text-xs text-slate-400 space-y-1.5 mt-12">
-    <p class="font-bold text-slate-300 flex items-center justify-center gap-1.5">
-      <span>🐸🎄 FU-EOS Study Portal</span>
-      <span>•</span>
-      <span class="text-amber-400 font-extrabold">Ôn thi 5 môn kỳ 3 FPT</span>
-    </p>
-    <p class="text-[11px] text-slate-500">
-      CSD203 • DBI202 • JPD113 • NWC303 • IAO202 — Lưu tiến độ học tự động trên trình duyệt (LocalStorage)
-    </p>
-    <p class="text-xs font-semibold text-indigo-300 tracking-wide pt-1">
-      Copyright@MMQ
-    </p>
-  </footer>
+  <!-- Exam Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-dialog">
+      <div class="modal-title">Cài đặt đề thi</div>
+      <div class="modal-options-stack">
+        <label class="modal-check-label">
+          <input type="checkbox" id="cfgShuffleQ" checked>
+          <span>Trộn thứ tự câu hỏi (Shuffle Questions)</span>
+        </label>
+        <label class="modal-check-label">
+          <input type="checkbox" id="cfgShuffleO" checked>
+          <span>Trộn thứ tự các đáp án A, B, C, D</span>
+        </label>
+        <div>
+          <label class="modal-field-label" for="cfgExamSubject">Môn học:</label>
+          <select id="cfgExamSubject" class="modal-select-field">
+            <option value="all">Toàn bộ Kỳ 3 (5 môn)</option>
+            <option value="CSD203">CSD203 - Cấu trúc dữ liệu &amp; Giải thuật</option>
+            <option value="DBI202">DBI202 - Cơ sở dữ liệu SQL Server</option>
+            <option value="IAO202">IAO202 - Vận hành An toàn thông tin</option>
+            <option value="NWC303">NWC303 - Mạng máy tính</option>
+            <option value="JPD113">JPD113 - Tiếng Nhật cơ sở 3</option>
+          </select>
+        </div>
+        <div>
+          <label class="modal-field-label" for="cfgTimer">Thời gian làm bài:</label>
+          <select id="cfgTimer" class="modal-select-field">
+            <option value="30">30 phút</option>
+            <option value="45">45 phút</option>
+            <option value="60" selected>60 phút (Chuẩn EOS)</option>
+            <option value="0">Không giới hạn thời gian (Tự do)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="btnCloseSettings">Đóng</button>
+        <button class="btn btn-primary" id="btnSaveSettings">Lưu &amp; tạo đề mới</button>
+      </div>
+    </div>
+  </div>
 
-  <script src="/app.js"></script>
+  <!-- Test Mistakes Review Modal -->
+  <div class="modal-overlay" id="testMistakesModal">
+    <div class="modal-dialog modal-dialog-lg modal-dialog-custom">
+      <div class="modal-header-flex">
+        <div>
+          <div class="modal-title modal-title-with-meta" id="testMistakesModalTitle">
+            <span>Xem chi tiết câu sai</span>
+          </div>
+          <div class="modal-subtitle-text" id="testMistakesModalSubtitle">
+            Danh sách các câu làm sai trong lần thi này
+          </div>
+        </div>
+        <button class="modal-close-icon-btn" id="btnCloseTestMistakesModal" title="Đóng" aria-label="Đóng">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body-scroll" id="testMistakesModalBody"></div>
+      <div class="modal-footer modal-footer-flex">
+        <button class="btn btn-warning" id="btnRetrySpecificTestMistakes">Làm lại các câu sai này</button>
+        <button class="btn btn-primary" id="btnCloseTestMistakesFooter">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js" defer></script>
 </body>
-
 </html>

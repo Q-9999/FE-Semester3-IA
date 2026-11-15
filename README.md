@@ -1,50 +1,64 @@
-# 
+# FU-EOS Kỳ 3 - Ôn Thi Trắc Nghiệm & Mock Exam
 
-Ứng dụng web tĩnh hỗ trợ ôn tập và làm bài kiểm tra trắc nghiệm cho 5 môn học kỳ 3 tại Đại học FPT.
+Ứng dụng web ôn tập trắc nghiệm, thẻ ghi nhớ (Flashcards) và thi thử giao diện Safe Exam Browser (SEB) dành cho các môn học Kỳ 3 - Đại học FPT.
 
-## 1. Dữ liệu câu hỏi
+## Tổng quan ngân hàng câu hỏi
 
-Hệ thống bao gồm 1,594 câu hỏi trắc nghiệm có đáp án và giải thích, chia theo 5 môn học:
+| Mã môn | Số lượng câu hỏi | Ghi chú hình ảnh |
+| --- | ---: | --- |
+| **CSD203** | 409 | — |
+| **DBI202** | 374 | Slide đính kèm (`SEMESTER_3_DBI202/`) |
+| **IAO202** | 316 | Slide đính kèm (`SEMESTER_3_IAO202/`) |
+| **NWC303** | 269 | — |
+| **JPD113** | 226 | — |
+| **Tổng cộng** | **1,594** | |
 
-| Mã môn | Tên môn học | Số lượng câu hỏi |
-| :--- | :--- | ---: |
-| CSD203 | Data Structures and Algorithms (Python) | 409 |
-| DBI202 | Introduction to Databases (SQL) | 374 |
-| IAO202 | Information Assurance Operations | 316 |
-| NWC303 | Computer Networking | 269 |
-| JPD113 | Elementary Japanese 3 | 226 |
+## Tính năng chính
 
-## 2. Chức năng chính
+- **Dashboard**: Thống kê tiến độ ôn tập, số câu đã làm, tỷ lệ chính xác theo từng học phần và truy cập nhanh các chế độ học.
+- **Study**: Luyện tập theo từng môn học kèm bộ lọc, tìm kiếm, đáp án giải thích và hiển thị hình ảnh slide câu hỏi trực tiếp.
+- **Thi thử SEB**: Giả lập môi trường làm bài thi thử với giao diện Safe Exam Browser (đồng hồ đếm ngược, bảng điều hướng câu hỏi, đánh dấu câu).
+- **FE - Test**: Chế độ luyện đề thi kết thúc học phần (Final Exam) sát với cấu trúc bài thi thực tế.
+- **Flashcards**: Ôn tập nhanh theo thẻ ghi nhớ kèm xem trước hình ảnh slide và lật thẻ hỏi/đáp.
+- **Câu sai**: Tự động lưu danh sách câu trả lời sai để ôn luyện lại có trọng tâm.
 
-- **Tổng quan (`/`)**: Hiển thị thống kê số lượng câu hỏi đã học, số câu cần ôn lại, số câu đã đánh dấu và lịch sử điểm thi thử theo từng môn.
-- **Học theo chủ đề (`/study`)**: Làm từng câu hỏi theo môn học, chủ đề và mức độ khó. Hiển thị đáp án đúng, giải thích chi tiết và cho phép đánh dấu trạng thái câu hỏi.
-- **Thẻ ghi nhớ (`/flashcards`)**: Lật thẻ để xem câu hỏi ở mặt trước và đáp án kèm giải thích ở mặt sau. Hỗ trợ trộn thứ tự thẻ và điều khiển bằng phím Space, Mũi tên Trái/Phải.
-- **Ngân hàng câu hỏi (`/questions`)**: Tìm kiếm câu hỏi theo từ khóa, lọc theo môn học, chủ đề, độ khó và trạng thái học tập.
-- **Thi thử (`/exam`)**: Tạo bài kiểm tra ngẫu nhiên theo môn học với số lượng câu hỏi (10, 25, 40, 50 câu) và thời gian đếm ngược (15, 30, 45, 60 phút). Tự động chấm điểm và lưu kết quả sau khi nộp bài.
-
-Toàn bộ tiến độ học tập và lịch sử bài thi được lưu trực tiếp trên trình duyệt thông qua LocalStorage.
-
-## 3. Cấu trúc thư mục
+## Cấu trúc thư mục
 
 ```text
-Deploy-vercel/
+Website-FE-Semester3_IA/
 ├── data/
-│   └── questions.json   # Dữ liệu 1,594 câu hỏi trắc nghiệm
-├── index.html           # Giao diện khung của ứng dụng
-├── app.js               # Mã nguồn xử lý giao diện và chức năng
-├── vercel.json          # Cấu hình điều hướng đường dẫn cho Vercel
-├── package.json         # Thông tin dự án và lệnh chạy cục bộ
-├── .gitignore           # Danh sách tệp bỏ qua khi đưa lên Git
-└── README.md            # Tài liệu hướng dẫn
+│   └── questions.json        # Ngân hàng 1,594 câu hỏi cho 5 môn học
+├── SEMESTER_3_DBI202/        # 374 ảnh slide môn DBI202
+├── SEMESTER_3_IAO202/        # 316 ảnh slide môn IAO202
+├── index.html                # Giao diện chính ứng dụng
+├── style.css                 # Stylesheet
+├── app.js                    # Logic ứng dụng frontend
+├── server.mjs                # HTTP server tĩnh & SPA fallback cho localhost
+├── start.sh                  # Script khởi chạy nhanh (bash)
+├── package.json              # Cấu hình npm scripts
+├── vercel.json               # Cấu hình deploy static & SPA rewrites trên Vercel
+├── .gitignore
+└── README.md
 ```
 
-## 4. Chạy ứng dụng trên máy cá nhân
+## Chạy trên máy (Localhost)
 
-Yêu cầu máy tính đã cài đặt Node.js. Mở terminal tại thư mục dự án và chạy:
+Yêu cầu **Node.js** (khuyến nghị bản LTS trở lên):
 
 ```bash
-npm run dev
+node server.mjs
 ```
 
-Sau đó mở trình duyệt tại địa chỉ `http://localhost:3000`.
+Hoặc dùng npm / bash script:
 
+```bash
+npm start
+# hoặc
+./start.sh
+```
+
+Mặc định server chạy tại `http://127.0.0.1:3000` (có thể tùy chỉnh qua biến môi trường `PORT` và `HOST`).
+
+## Deploy lên Vercel
+
+Repository hỗ trợ deploy trực tiếp lên Vercel ở thư mục gốc thông qua [vercel.json](./vercel.json) (`outputDirectory: "."` và SPA rewrites cho các route không phải file tĩnh hoặc `/data/`).

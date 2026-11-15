@@ -1,1335 +1,3204 @@
 (() => {
   'use strict';
 
-  const PROGRESS_KEY = 'fu_eos_progress_v1';
-  const EXAMS_KEY = 'fu_eos_exams_v1';
-  const SNOW_KEY = 'fu_eos_snow_enabled';
+  // =========================================================================
+  // 1. CONSTANTS & SUBJECT METADATA (FPT SEMESTER 3 - 5 SUBJECTS)
+  // =========================================================================
 
-  const SUBJECT_META = {
+  const SUBJECT_INFO = {
+    all: {
+      code: 'ALL',
+      name: 'Toàn bộ Kỳ 3 (5 Môn)',
+      short: 'Tổng hợp 1,594 câu hỏi 5 môn Kỳ 3',
+      lang: 'General'
+    },
     CSD203: {
-      name: 'Data Structures and Algorithms (Python)',
-      short: 'Cấu trúc dữ liệu & Giải thuật',
-      color: 'from-indigo-500 to-cyan-500',
-      badge: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+      code: 'CSD203',
+      name: 'CSD203: Data Structures & Algorithms (Python)',
+      short: 'Cấu trúc dữ liệu & Giải thuật Python',
+      lang: 'Python 3'
     },
     DBI202: {
-      name: 'Introduction to Databases (SQL)',
+      code: 'DBI202',
+      name: 'DBI202: Introduction to Databases (SQL)',
       short: 'Cơ sở dữ liệu SQL Server',
-      color: 'from-emerald-500 to-teal-500',
-      badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-    },
-    JPD113: {
-      name: 'Elementary Japanese 3',
-      short: 'Tiếng Nhật cơ sở 3',
-      color: 'from-rose-500 to-pink-500',
-      badge: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
-    },
-    NWC303: {
-      name: 'Computer Networking',
-      short: 'Mạng máy tính',
-      color: 'from-sky-500 to-blue-600',
-      badge: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+      lang: 'T-SQL / SQL'
     },
     IAO202: {
-      name: 'Information Assurance Operations',
+      code: 'IAO202',
+      name: 'IAO202: Information Assurance Operations',
       short: 'Vận hành An toàn thông tin',
-      color: 'from-amber-500 to-orange-500',
-      badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+      lang: 'Security CLI'
     },
+    NWC303: {
+      code: 'NWC303',
+      name: 'NWC303: Computer Networking',
+      short: 'Mạng máy tính & Giao thức',
+      lang: 'Network CLI'
+    },
+    JPD113: {
+      code: 'JPD113',
+      name: 'JPD113: Elementary Japanese 3',
+      short: 'Tiếng Nhật cơ sở 3',
+      lang: 'Japanese'
+    }
   };
 
-  const state = {
-    questions: [],
-    progress: {},
-    exams: [],
-    selectedSubject: 'CSD203',
-    study: {
-      subject: 'CSD203',
-      topic: 'ALL',
-      difficulty: 'ALL',
-      onlyBookmarked: false,
-      index: 0,
-      selectedOption: null,
-      showExplanation: false,
-      showSlidePanel: false,
-    },
-    flashcards: {
-      subject: 'CSD203',
-      topic: 'ALL',
-      index: 0,
-      flipped: false,
-      shuffledOrder: null,
-    },
-    bank: {
-      query: '',
-      subject: 'ALL',
-      topic: 'ALL',
-      difficulty: 'ALL',
-      filterStatus: 'ALL',
-      page: 1,
-      pageSize: 20,
-      expandedIds: new Set(),
-    },
-    exam: {
-      mode: 'setup',
-      subject: 'CSD203',
-      count: 25,
-      minutes: 30,
-      items: [],
-      answers: {},
-      flagged: new Set(),
-      currentIndex: 0,
-      secondsLeft: 0,
-      timerId: null,
-      lastResult: null,
-    },
-    snowEnabled: true,
+  const SUBJECT_KEYS = ['CSD203', 'DBI202', 'IAO202', 'NWC303', 'JPD113'];
+
+  const STORAGE_KEYS = {
+    THEME: 'fu_eos_theme',
+    STARRED: 'fu_eos_v2_starred',
+    MISTAKES: 'fu_eos_v2_mistakes',
+    ATTEMPTED: 'fu_eos_v2_attempted',
+    MODULE_STATS: 'fu_eos_v2_modstats',
+    DAILY_HISTORY: 'fu_eos_v2_daily',
+    FE_TESTS: 'fu_eos_v2_fetests',
+    EXAM_CONFIG: 'fu_eos_v2_examcfg',
+    FE_CFG: 'fu_eos_v2_fecfg',
+    SIDEBAR_COLLAPSED: 'fu_eos_v2_sidebar_collapsed',
+    MIGRATED_V1: 'fu_eos_v2_migrated_from_v1',
+    LEGACY_PROGRESS: 'fu_eos_progress_v1',
+    LEGACY_EXAMS: 'fu_eos_exams_v1'
   };
 
-  function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
+  // =========================================================================
+  // 2. UTILITIES
+  // =========================================================================
 
-  function loadLocalState() {
-    try {
-      const p = localStorage.getItem(PROGRESS_KEY);
-      if (p) state.progress = JSON.parse(p);
-    } catch {}
-    try {
-      const e = localStorage.getItem(EXAMS_KEY);
-      if (e) state.exams = JSON.parse(e);
-    } catch {}
-    try {
-      const s = localStorage.getItem(SNOW_KEY);
-      if (s !== null) state.snowEnabled = s === 'true';
-    } catch {}
-  }
-
-  function saveProgress() {
-    try {
-      localStorage.setItem(PROGRESS_KEY, JSON.stringify(state.progress));
-    } catch {}
-  }
-
-  function saveExams() {
-    try {
-      localStorage.setItem(EXAMS_KEY, JSON.stringify(state.exams));
-    } catch {}
-  }
-
-  function getProgress(id) {
-    return state.progress[id] || {};
-  }
-
-  function toggleBookmark(id) {
-    const cur = state.progress[id] || {};
-    state.progress[id] = { ...cur, bookmarked: !cur.bookmarked };
-    saveProgress();
-    render();
-  }
-
-  function setMastery(id, status, isCorrect) {
-    const cur = state.progress[id] || {};
-    state.progress[id] = {
-      ...cur,
-      masteryStatus: status,
-      timesAnswered: (cur.timesAnswered || 0) + 1,
-      timesCorrect: (cur.timesCorrect || 0) + (isCorrect ? 1 : 0),
-    };
-    saveProgress();
-  }
-
-  function getSlidePath(q) {
-    if (!q) return '';
-    if (q.imagePath && !q.imagePath.startsWith('/api/slides/')) return q.imagePath;
-    if (q.imageFileName) {
-      const sub = (q.subject || 'CSD203').toUpperCase();
-      return `/SEMESTER_3_${sub}/${q.imageFileName}`;
+  class Utils {
+    static escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
-    return '';
-  }
 
-  function getDifficultyBadge(diff) {
-    if (diff === 'Easy') return '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Easy</span>';
-    if (diff === 'Hard') return '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30">Hard</span>';
-    return '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">Medium</span>';
-  }
-
-  function getTopicsForSubject(subject) {
-    const map = new Map();
-    for (const q of state.questions) {
-      if (subject !== 'ALL' && q.subject !== subject) continue;
-      map.set(q.topic, (map.get(q.topic) || 0) + 1);
-    }
-    return [...map.entries()].map(([topic, count]) => ({ topic, count }));
-  }
-
-  function getGlobalStats() {
-    let mastered = 0;
-    let reviewNeeded = 0;
-    let bookmarked = 0;
-    for (const q of state.questions) {
-      const p = getProgress(q.id);
-      if (p.masteryStatus === 'mastered') mastered++;
-      if (p.masteryStatus === 'review_needed') reviewNeeded++;
-      if (p.bookmarked) bookmarked++;
-    }
-    const examCount = state.exams.length;
-    const avgScore = examCount
-      ? Math.round(state.exams.reduce((acc, x) => acc + x.scorePercentage, 0) / examCount)
-      : 0;
-    return { total: state.questions.length, mastered, reviewNeeded, bookmarked, examCount, avgScore };
-  }
-
-  function renderSnow() {
-    const layer = document.getElementById('snow-layer');
-    if (!layer) return;
-    if (!state.snowEnabled) {
-      layer.innerHTML = '';
-      return;
-    }
-    const flakes = [];
-    for (let i = 0; i < 24; i++) {
-      const left = ((i * 37) % 100).toFixed(1);
-      const duration = (8 + (i % 7) * 2).toFixed(1);
-      const delay = ((i % 9) * 0.9).toFixed(1);
-      const size = 10 + (i % 4) * 3;
-      flakes.push(
-        `<div class="snowflake" style="left:${left}%;font-size:${size}px;animation-duration:${duration}s;animation-delay:${delay}s;">❄</div>`
-      );
-    }
-    layer.innerHTML = flakes.join('');
-  }
-
-  function getCurrentRoute() {
-    const path = window.location.pathname || '/';
-    if (path.startsWith('/study')) return '/study';
-    if (path.startsWith('/flashcards')) return '/flashcards';
-    if (path.startsWith('/questions')) return '/questions';
-    if (path.startsWith('/exam')) return '/exam';
-    return '/';
-  }
-
-  function navigate(url) {
-    const parsed = new URL(url, window.location.origin);
-    window.history.pushState({}, '', parsed.pathname + parsed.search);
-    syncFromQuery();
-    render();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function syncFromQuery() {
-    const params = new URLSearchParams(window.location.search);
-    const sub = params.get('subject');
-    const topic = params.get('topic');
-    const qid = params.get('id');
-    const route = getCurrentRoute();
-
-    if (route === '/study') {
-      if (sub && SUBJECT_META[sub]) state.study.subject = sub;
-      if (topic) state.study.topic = topic;
-      if (qid) {
-        const foundQ = state.questions.find(q => q.id === qid);
-        if (foundQ) {
-          state.study.subject = foundQ.subject;
-          state.study.topic = 'ALL';
-          state.study.difficulty = 'ALL';
-          state.study.onlyBookmarked = false;
-          const list = getStudyQuestions();
-          const idx = list.findIndex(q => q.id === qid);
-          if (idx >= 0) state.study.index = idx;
-        }
+    static shuffleArray(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
       }
-      state.study.selectedOption = null;
-      state.study.showExplanation = false;
-    } else if (route === '/flashcards') {
-      if (sub && SUBJECT_META[sub]) state.flashcards.subject = sub;
-      if (topic) state.flashcards.topic = topic;
-      state.flashcards.flipped = false;
-    } else if (route === '/exam') {
-      if (sub && SUBJECT_META[sub]) state.exam.subject = sub;
+      return arr;
+    }
+
+    static copyToClipboard(text, btnElement = null) {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) return;
+      navigator.clipboard.writeText(text).then(() => {
+        if (btnElement) {
+          const orig = btnElement.innerText;
+          btnElement.innerText = 'Đã chép!';
+          setTimeout(() => { btnElement.innerText = orig; }, 1400);
+        }
+      }).catch(() => {});
+    }
+
+    static copyCli(btn, text) {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const span = btn.querySelector('span');
+        if (span) span.innerText = 'Đã sao chép!';
+        btn.style.color = '#22c55e';
+        setTimeout(() => {
+          if (span) span.innerText = 'Sao chép';
+          btn.style.color = '';
+        }, 1600);
+      }).catch(() => {});
+    }
+
+    static highlightCodeSyntax(escapedText) {
+      return escapedText
+        .replace(/^(\s*(?:#|--|\/\/).*)$/gm, '<span class="cli-comment">$1</span>')
+        .replace(/\b(SELECT|FROM|WHERE|JOIN|INNER|LEFT|RIGHT|GROUP BY|ORDER BY|HAVING|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|ALTER|DROP|PRIMARY KEY|FOREIGN KEY|AS|ON|AND|OR|NOT|IN|NULL|DISTINCT|COUNT|SUM|AVG|MAX|MIN|def|class|return|if|elif|else|for|while|import|from|in|range|len|None|True|False|self|print|switchport|router|interface|vlan|ip|access-list|permit|deny)\b/g, '<span class="cli-keyword">$1</span>');
+    }
+
+    static renderCodeTerminal(codeSnippet, subject = 'CSD203') {
+      if (!codeSnippet || !String(codeSnippet).trim()) return '';
+      const raw = String(codeSnippet).trim();
+      const langTitle = SUBJECT_INFO[subject]?.lang || 'Code Snippet';
+      const highlighted = Utils.highlightCodeSyntax(Utils.escapeHtml(raw));
+      return `
+        <div class="cisco-terminal-box">
+          <div class="terminal-topbar">
+            <div class="terminal-dots">
+              <span class="dot dot-red"></span>
+              <span class="dot dot-yellow"></span>
+              <span class="dot dot-green"></span>
+            </div>
+            <span class="terminal-title">${Utils.escapeHtml(langTitle)}</span>
+            <button type="button" class="btn-copy-cli" data-cli="${Utils.escapeHtml(raw)}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              <span>Sao chép</span>
+            </button>
+          </div>
+          <pre class="terminal-code"><code>${highlighted}</code></pre>
+        </div>
+      `;
+    }
+
+    static formatQuestionText(text) {
+      if (!text) return '';
+      const escaped = Utils.escapeHtml(String(text));
+      return escaped
+        .replace(/`([^`]+)`/g, '<code class="inline-cli-code">$1</code>')
+        .replace(/\n/g, '<br>');
+    }
+
+    static formatExplanation(text) {
+      if (!text) return '';
+      return Utils.escapeHtml(String(text))
+        .replace(/`([^`]+)`/g, '<code class="inline-cli-code">$1</code>')
+        .replace(/\n/g, '<br>');
+    }
+
+    static getSlidePath(q) {
+      if (!q) return '';
+      if (q.imagePath && !String(q.imagePath).startsWith('/api/slides/')) {
+        return q.imagePath;
+      }
+      if (q.imageFileName) {
+        const sub = (q.subject || 'CSD203').toUpperCase();
+        return `/SEMESTER_3_${sub}/${q.imageFileName}`;
+      }
+      return '';
+    }
+
+    static renderSlidePreview(q, expandedByDefault = false) {
+      const path = Utils.getSlidePath(q);
+      if (!path) return '';
+      const safePath = Utils.escapeHtml(path);
+      const panelId = `slide_panel_${q.id}_${Math.random().toString(36).slice(2, 7)}`;
+      return `
+        <div class="slide-preview-wrap" style="margin: 10px 0;">
+          <div class="slide-preview-header">
+            <span>Tài liệu Slide tham khảo (${Utils.escapeHtml(q.imageFileName || 'Slide')})</span>
+            <button type="button" class="btn btn-outline btn-xs btn-toggle-slide" data-target="${panelId}">
+              ${expandedByDefault ? 'Ẩn Slide' : 'Xem Slide gốc'}
+            </button>
+          </div>
+          <div id="${panelId}" style="display: ${expandedByDefault ? 'block' : 'none'};">
+            <img src="${safePath}" alt="Slide minh họa" class="slide-preview-img" loading="lazy"
+                 onerror="if(!this.dataset.fallbackTried){this.dataset.fallbackTried='1';this.src=this.src.endsWith('.png')?this.src.replace(/\.png$/i,'.jpg'):this.src.replace(/\.jpg$/i,'.png');}else{this.closest('.slide-preview-wrap').style.display='none';}">
+          </div>
+        </div>
+      `;
+    }
+
+    static getDifficultyMeta(diff) {
+      const d = (diff || 'Medium').toLowerCase();
+      if (d === 'easy') return { label: 'Cơ bản', cls: 'diff-easy' };
+      if (d === 'hard') return { label: 'Nâng cao', cls: 'diff-hard' };
+      return { label: 'Trung bình', cls: 'diff-medium' };
+    }
+
+    static formatTimeMmSs(totalSeconds) {
+      const sec = Math.max(0, Math.floor(totalSeconds));
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
   }
 
-  function updateNavbar() {
-    const route = getCurrentRoute();
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-      const target = btn.getAttribute('data-route');
-      if (target === route) {
-        btn.className = 'nav-btn px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition bg-indigo-600 text-white shadow-md shadow-indigo-600/25';
+  // =========================================================================
+  // 3. STORAGE SERVICE & LEGACY MIGRATION
+  // =========================================================================
+
+  class StorageService {
+    static getJson(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    static setJson(key, val) {
+      try {
+        localStorage.setItem(key, JSON.stringify(val));
+      } catch (e) {}
+    }
+
+    static todayKey(dateObj = new Date()) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    static getTheme() {
+      return localStorage.getItem(STORAGE_KEYS.THEME) || 'light';
+    }
+
+    static setTheme(theme) {
+      try { localStorage.setItem(STORAGE_KEYS.THEME, theme); } catch (e) {}
+    }
+
+    static getStarred() {
+      return new Set(StorageService.getJson(STORAGE_KEYS.STARRED, []));
+    }
+
+    static saveStarred(set) {
+      StorageService.setJson(STORAGE_KEYS.STARRED, Array.from(set));
+    }
+
+    static getMistakes() {
+      return new Set(StorageService.getJson(STORAGE_KEYS.MISTAKES, []));
+    }
+
+    static saveMistakes(set) {
+      StorageService.setJson(STORAGE_KEYS.MISTAKES, Array.from(set));
+    }
+
+    static getAttempted() {
+      return new Set(StorageService.getJson(STORAGE_KEYS.ATTEMPTED, []));
+    }
+
+    static saveAttempted(set) {
+      StorageService.setJson(STORAGE_KEYS.ATTEMPTED, Array.from(set));
+    }
+
+    static getModuleStats() {
+      return StorageService.getJson(STORAGE_KEYS.MODULE_STATS, {});
+    }
+
+    static saveModuleStats(stats) {
+      StorageService.setJson(STORAGE_KEYS.MODULE_STATS, stats);
+    }
+
+    static getDailyHistory() {
+      return StorageService.getJson(STORAGE_KEYS.DAILY_HISTORY, {});
+    }
+
+    static saveDailyHistory(history) {
+      StorageService.setJson(STORAGE_KEYS.DAILY_HISTORY, history);
+    }
+
+    static getFeTests() {
+      return StorageService.getJson(STORAGE_KEYS.FE_TESTS, []);
+    }
+
+    static saveFeTests(tests) {
+      StorageService.setJson(STORAGE_KEYS.FE_TESTS, tests);
+    }
+
+    static getExamConfig() {
+      return StorageService.getJson(STORAGE_KEYS.EXAM_CONFIG, {
+        shuffleQuestions: true,
+        shuffleOptions: true,
+        timerMinutes: 60,
+        subject: 'all'
+      });
+    }
+
+    static saveExamConfig(cfg) {
+      StorageService.setJson(STORAGE_KEYS.EXAM_CONFIG, cfg);
+    }
+
+    static migrateFromV1IfNeeded() {
+      if (localStorage.getItem(STORAGE_KEYS.MIGRATED_V1)) return;
+      try {
+        const legacyProg = StorageService.getJson(STORAGE_KEYS.LEGACY_PROGRESS, null);
+        if (legacyProg && typeof legacyProg === 'object') {
+          const starred = StorageService.getStarred();
+          const mistakes = StorageService.getMistakes();
+          const attempted = StorageService.getAttempted();
+
+          Object.entries(legacyProg).forEach(([qid, rec]) => {
+            if (!rec || typeof rec !== 'object') return;
+            if (rec.bookmarked) starred.add(qid);
+            if (rec.masteryStatus === 'review_needed') mistakes.add(qid);
+            if (rec.masteryStatus || (rec.timesAnswered && rec.timesAnswered > 0)) {
+              attempted.add(qid);
+            }
+          });
+
+          StorageService.saveStarred(starred);
+          StorageService.saveMistakes(mistakes);
+          StorageService.saveAttempted(attempted);
+        }
+
+        const legacyExams = StorageService.getJson(STORAGE_KEYS.LEGACY_EXAMS, null);
+        if (Array.isArray(legacyExams) && legacyExams.length > 0) {
+          const feTests = StorageService.getFeTests();
+          if (feTests.length === 0) {
+            legacyExams.slice(0, 10).forEach((ex, i) => {
+              const total = ex.totalQuestions || 50;
+              const correct = ex.correctCount || 0;
+              const pct = Math.round(ex.scorePercentage || (total ? (correct / total) * 100 : 0));
+              const dateStr = ex.createdAt ? new Date(ex.createdAt).toLocaleDateString('vi-VN') : StorageService.todayKey();
+              feTests.push({
+                id: `Legacy_Exam_${i + 1}`,
+                title: `${ex.subject || 'Kỳ 3'} (${total}Q • Lịch sử cũ)`,
+                subject: ex.subject || 'all',
+                mode: 'exam',
+                durationMinutes: 60,
+                shuffle: true,
+                createdAt: dateStr,
+                lastDate: dateStr,
+                questionIds: [],
+                completed: true,
+                scorePct: pct,
+                correctCount: correct,
+                history: [{
+                  turn: 1,
+                  date: dateStr,
+                  scorePct: pct,
+                  correctCount: correct,
+                  totalCount: total,
+                  wrongQuestions: []
+                }]
+              });
+            });
+            StorageService.saveFeTests(feTests);
+          }
+        }
+        localStorage.setItem(STORAGE_KEYS.MIGRATED_V1, '1');
+      } catch (e) {}
+    }
+  }
+
+  // =========================================================================
+  // 4. DATA STORE
+  // =========================================================================
+
+  class ExamDataStore {
+    constructor() {
+      this.questions = [];
+      this.questionMap = new Map();
+      this.bySubject = new Map();
+      this.topicsBySubject = new Map();
+
+      StorageService.migrateFromV1IfNeeded();
+
+      this.starredIds = StorageService.getStarred();
+      this.mistakesIds = StorageService.getMistakes();
+      this.attemptedIds = StorageService.getAttempted();
+      this.moduleStats = StorageService.getModuleStats();
+      this.dailyHistory = StorageService.getDailyHistory();
+      this.feTests = StorageService.getFeTests();
+    }
+
+    async loadQuestions() {
+      const res = await fetch('/data/questions.json');
+      if (!res.ok) throw new Error(`HTTP ${res.status} khi tải /data/questions.json`);
+      const raw = await res.json();
+      if (!Array.isArray(raw)) throw new Error('Dữ liệu questions.json không hợp lệ');
+
+      this.questions = raw.map((item) => {
+        const subject = (item.subject || 'CSD203').toUpperCase();
+        const correctKey = String(item.correctAnswer || 'A').trim().toUpperCase();
+        const opts = Array.isArray(item.options)
+          ? item.options.map((o, idx) => {
+              const key = String(o.key || String.fromCharCode(65 + idx)).trim().toUpperCase();
+              return {
+                key,
+                text: String(o.text ?? ''),
+                isCorrect: key === correctKey
+              };
+            })
+          : [];
+
+        return {
+          id: String(item.id),
+          subject,
+          subjectName: item.subjectName || SUBJECT_INFO[subject]?.name || subject,
+          topic: String(item.topic || 'Chung').trim(),
+          difficulty: String(item.difficulty || 'Medium').trim(),
+          questionText: String(item.questionText || ''),
+          codeSnippet: item.codeSnippet ? String(item.codeSnippet) : '',
+          options: opts,
+          correctAnswer: correctKey,
+          explanation: item.explanation ? String(item.explanation) : '',
+          imageFileName: item.imageFileName || '',
+          imagePath: item.imagePath || '',
+          speakerNote: item.speakerNote || ''
+        };
+      });
+
+      this.questionMap.clear();
+      this.bySubject.clear();
+      this.topicsBySubject.clear();
+
+      SUBJECT_KEYS.forEach((k) => {
+        this.bySubject.set(k, []);
+        this.topicsBySubject.set(k, new Set());
+      });
+      const allTopics = new Set();
+
+      this.questions.forEach((q) => {
+        this.questionMap.set(q.id, q);
+        if (!this.bySubject.has(q.subject)) this.bySubject.set(q.subject, []);
+        this.bySubject.get(q.subject).push(q);
+
+        if (!this.topicsBySubject.has(q.subject)) this.topicsBySubject.set(q.subject, new Set());
+        if (q.topic) {
+          this.topicsBySubject.get(q.subject).add(q.topic);
+          allTopics.add(q.topic);
+        }
+      });
+
+      this.topicsBySubject.set('all', allTopics);
+    }
+
+    getQuestion(id) {
+      return this.questionMap.get(id) || null;
+    }
+
+    getQuestionsBySubject(subjectKey) {
+      if (!subjectKey || subjectKey === 'all') return this.questions;
+      return this.bySubject.get(subjectKey) || [];
+    }
+
+    getTopics(subjectKey) {
+      const set = this.topicsBySubject.get(subjectKey || 'all') || new Set();
+      return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
+    }
+
+    toggleStar(id) {
+      if (this.starredIds.has(id)) {
+        this.starredIds.delete(id);
       } else {
-        btn.className = 'nav-btn px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition text-slate-400 hover:text-white hover:bg-slate-800/80';
+        this.starredIds.add(id);
       }
-    });
-  }
-
-  function renderDashboard() {
-    const stats = getGlobalStats();
-    const subjects = Object.keys(SUBJECT_META);
-    const activeSub = state.selectedSubject;
-    const topics = getTopicsForSubject(activeSub);
-
-    const subjectCardsHtml = subjects.map(code => {
-      const meta = SUBJECT_META[code];
-      const subQuestions = state.questions.filter(q => q.subject === code);
-      const subMastered = subQuestions.filter(q => getProgress(q.id).masteryStatus === 'mastered').length;
-      const pct = subQuestions.length ? Math.round((subMastered / subQuestions.length) * 100) : 0;
-      const isSelected = activeSub === code;
-
-      return `
-        <div class="bg-slate-900/85 border rounded-2xl p-5 flex flex-col justify-between transition-all ${
-          isSelected ? 'border-indigo-500 ring-1 ring-indigo-500/40 shadow-lg shadow-indigo-500/10' : 'border-slate-800 hover:border-slate-700'
-        }">
-          <div class="space-y-3">
-            <div class="flex items-center justify-between gap-2">
-              <span class="px-2.5 py-0.5 rounded-md text-xs font-mono font-bold border ${meta.badge}">${code}</span>
-              <span class="text-xs text-slate-400 font-medium">${subQuestions.length} câu</span>
-            </div>
-            <div>
-              <h3 class="font-bold text-white text-sm leading-snug">${escapeHtml(meta.name)}</h3>
-              <p class="text-xs text-slate-400 mt-0.5">${escapeHtml(meta.short)}</p>
-            </div>
-            <div class="space-y-1.5 pt-1">
-              <div class="flex justify-between text-[11px] text-slate-400">
-                <span>Đã thuộc</span>
-                <span class="text-slate-200 font-semibold">${subMastered}/${subQuestions.length} (${pct}%)</span>
-              </div>
-              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                <div class="h-full bg-gradient-to-r ${meta.color} transition-all" style="width:${pct}%"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-1.5 pt-4 mt-4 border-t border-slate-800/80">
-            <button data-action="select-subject" data-subject="${code}" class="px-2 py-1.5 rounded-lg text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 transition">
-              Chủ đề
-            </button>
-            <a href="/study?subject=${code}" data-route="/study?subject=${code}" class="px-2 py-1.5 rounded-lg text-[11px] font-semibold bg-indigo-600/90 hover:bg-indigo-500 text-white text-center transition">
-              Học ngay
-            </a>
-            <a href="/exam?subject=${code}" data-route="/exam?subject=${code}" class="px-2 py-1.5 rounded-lg text-[11px] font-medium bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-center transition">
-              Thi thử
-            </a>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    const topicsHtml = topics.map(t => {
-      const encodedTopic = encodeURIComponent(t.topic);
-      return `
-        <a href="/study?subject=${activeSub}&topic=${encodedTopic}" data-route="/study?subject=${activeSub}&topic=${encodedTopic}"
-          class="group bg-slate-900/70 hover:bg-slate-800/90 border border-slate-800 hover:border-indigo-500/40 rounded-xl p-4 flex items-center justify-between gap-3 transition">
-          <div class="min-w-0">
-            <div class="text-sm font-semibold text-slate-100 group-hover:text-indigo-300 truncate transition">${escapeHtml(t.topic)}</div>
-            <div class="text-xs text-slate-400 mt-0.5">${t.count} câu hỏi có đáp án &amp; giải thích</div>
-          </div>
-          <div class="shrink-0 w-8 h-8 rounded-lg bg-slate-800 group-hover:bg-indigo-600 flex items-center justify-center text-slate-400 group-hover:text-white transition">
-            <i data-lucide="arrow-right" class="w-4 h-4"></i>
-          </div>
-        </a>
-      `;
-    }).join('');
-
-    return `
-      <div class="space-y-8">
-        <section class="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950/50 border border-slate-800 rounded-3xl p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div class="space-y-3 max-w-2xl">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold">
-              <i data-lucide="award" class="w-3.5 h-3.5"></i>
-              <span>Bộ đề ôn thi 5 môn kỳ 3 FPT • Đầy đủ 1,594 câu hỏi</span>
-            </div>
-            <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
-              Hệ Thống Ôn Thi <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-indigo-400">FU-EOS Kỳ 3</span>
-            </h1>
-            <p class="text-sm text-slate-300 leading-relaxed">
-              Ôn tập toàn diện CSD203, DBI202, JPD113, NWC303 và IAO202 theo từng chuyên đề, thẻ ghi nhớ Flashcards, tra cứu ngân hàng câu hỏi và thi thử bấm giờ.
-            </p>
-            <div class="flex flex-wrap gap-2.5 pt-2">
-              <a href="/study?subject=${activeSub}" data-route="/study?subject=${activeSub}" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-2 shadow-lg shadow-indigo-600/25 transition">
-                <i data-lucide="play" class="w-3.5 h-3.5"></i>
-                <span>Bắt đầu học ${activeSub}</span>
-              </a>
-              <a href="/questions" data-route="/questions" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-2 border border-slate-700 transition">
-                <i data-lucide="search" class="w-3.5 h-3.5"></i>
-                <span>Tra cứu 1,594 câu hỏi</span>
-              </a>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3 w-full lg:w-auto shrink-0">
-            <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 min-w-[130px]">
-              <div class="text-xs text-slate-400">Tổng câu hỏi</div>
-              <div class="text-2xl font-extrabold text-white mt-1">${stats.total.toLocaleString()}</div>
-            </div>
-            <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 min-w-[130px]">
-              <div class="text-xs text-slate-400">Đã thuộc</div>
-              <div class="text-2xl font-extrabold text-emerald-400 mt-1">${stats.mastered}</div>
-            </div>
-            <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 min-w-[130px]">
-              <div class="text-xs text-slate-400">Đánh dấu</div>
-              <div class="text-2xl font-extrabold text-amber-400 mt-1">${stats.bookmarked}</div>
-            </div>
-            <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 min-w-[130px]">
-              <div class="text-xs text-slate-400">Điểm thi TB</div>
-              <div class="text-2xl font-extrabold text-indigo-400 mt-1">${stats.avgScore}%</div>
-            </div>
-          </div>
-        </section>
-
-        <section class="space-y-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-bold text-white flex items-center gap-2">
-              <i data-lucide="graduation-cap" class="w-5 h-5 text-indigo-400"></i>
-              <span>Danh sách 5 Môn Kỳ 3</span>
-            </h2>
-            <span class="text-xs text-slate-400">Chọn môn để xem danh sách chuyên đề bên dưới</span>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            ${subjectCardsHtml}
-          </div>
-        </section>
-
-        <section class="space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <h2 class="text-lg font-bold text-white flex items-center gap-2">
-              <i data-lucide="folder-open" class="w-5 h-5 text-amber-400"></i>
-              <span>Chuyên đề môn ${activeSub}</span>
-              <span class="text-xs font-normal text-slate-400">(${topics.length} chủ đề)</span>
-            </h2>
-            <a href="/flashcards?subject=${activeSub}" data-route="/flashcards?subject=${activeSub}" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-              <span>Ôn tập Flashcards môn ${activeSub}</span>
-              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-            </a>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            ${topicsHtml}
-          </div>
-        </section>
-      </div>
-    `;
-  }
-
-  function getStudyQuestions() {
-    return state.questions.filter(q => {
-      if (state.study.subject !== 'ALL' && q.subject !== state.study.subject) return false;
-      if (state.study.topic !== 'ALL' && q.topic !== state.study.topic) return false;
-      if (state.study.difficulty !== 'ALL' && q.difficulty !== state.study.difficulty) return false;
-      if (state.study.onlyBookmarked && !getProgress(q.id).bookmarked) return false;
-      return true;
-    });
-  }
-
-  function renderStudy() {
-    const list = getStudyQuestions();
-    if (state.study.index >= list.length) state.study.index = Math.max(0, list.length - 1);
-    const q = list[state.study.index];
-    const topics = getTopicsForSubject(state.study.subject);
-    const meta = SUBJECT_META[state.study.subject] || SUBJECT_META.CSD203;
-
-    const filterBar = `
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center gap-3">
-        <select id="study-subject" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
-          ${Object.keys(SUBJECT_META).map(c => `<option value="${c}" ${state.study.subject === c ? 'selected' : ''}>${c} - ${escapeHtml(SUBJECT_META[c].short)}</option>`).join('')}
-        </select>
-        <select id="study-topic" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white max-w-xs focus:outline-none focus:border-indigo-500">
-          <option value="ALL" ${state.study.topic === 'ALL' ? 'selected' : ''}>Tất cả chủ đề (${state.questions.filter(x => x.subject === state.study.subject).length})</option>
-          ${topics.map(t => `<option value="${escapeHtml(t.topic)}" ${state.study.topic === t.topic ? 'selected' : ''}>${escapeHtml(t.topic)} (${t.count})</option>`).join('')}
-        </select>
-        <select id="study-difficulty" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
-          <option value="ALL" ${state.study.difficulty === 'ALL' ? 'selected' : ''}>Mọi độ khó</option>
-          <option value="Easy" ${state.study.difficulty === 'Easy' ? 'selected' : ''}>Easy</option>
-          <option value="Medium" ${state.study.difficulty === 'Medium' ? 'selected' : ''}>Medium</option>
-          <option value="Hard" ${state.study.difficulty === 'Hard' ? 'selected' : ''}>Hard</option>
-        </select>
-        <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer px-2">
-          <input id="study-bookmarked" type="checkbox" ${state.study.onlyBookmarked ? 'checked' : ''} class="rounded border-slate-700 bg-slate-950 text-indigo-500" />
-          <span>Chỉ câu đánh dấu</span>
-        </label>
-        <div class="ml-auto text-xs text-slate-400 font-mono">
-          ${list.length > 0 ? `Câu ${state.study.index + 1} / ${list.length}` : '0 câu hỏi'}
-        </div>
-      </div>
-    `;
-
-    if (!q) {
-      return `
-        <div class="space-y-6">
-          ${filterBar}
-          <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-12 text-center space-y-3">
-            <i data-lucide="inbox" class="w-10 h-10 text-slate-500 mx-auto"></i>
-            <p class="text-sm text-slate-300 font-semibold">Không tìm thấy câu hỏi nào khớp bộ lọc</p>
-            <button data-action="study-reset-filters" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white">Đặt lại bộ lọc</button>
-          </div>
-        </div>
-      `;
+      StorageService.saveStarred(this.starredIds);
+      return this.starredIds.has(id);
     }
 
-    const prog = getProgress(q.id);
-    const slidePath = getSlidePath(q);
-    const answered = state.study.selectedOption !== null;
-    const isCorrect = answered && state.study.selectedOption === q.correctAnswer;
+    addMistake(id) {
+      if (!this.mistakesIds.has(id)) {
+        this.mistakesIds.add(id);
+        StorageService.saveMistakes(this.mistakesIds);
+      }
+    }
 
-    const optionsHtml = q.options.map(opt => {
-      let cls = 'border-slate-800 bg-slate-950/60 hover:border-indigo-500/50 hover:bg-slate-900 text-slate-200';
-      let badgeCls = 'bg-slate-800 text-slate-300 border-slate-700';
+    removeMistake(id) {
+      if (this.mistakesIds.has(id)) {
+        this.mistakesIds.delete(id);
+        StorageService.saveMistakes(this.mistakesIds);
+      }
+    }
 
-      if (answered || state.study.showExplanation) {
-        if (opt.key === q.correctAnswer) {
-          cls = 'border-emerald-500 bg-emerald-500/15 text-emerald-100';
-          badgeCls = 'bg-emerald-500 text-white border-emerald-400';
-        } else if (opt.key === state.study.selectedOption) {
-          cls = 'border-rose-500 bg-rose-500/15 text-rose-100';
-          badgeCls = 'bg-rose-500 text-white border-rose-400';
-        } else {
-          cls = 'border-slate-800/60 bg-slate-950/30 text-slate-500';
+    clearAllMistakes() {
+      this.mistakesIds.clear();
+      StorageService.saveMistakes(this.mistakesIds);
+    }
+
+    markAttempted(ids) {
+      let changed = false;
+      ids.forEach((id) => {
+        if (!this.attemptedIds.has(id)) {
+          this.attemptedIds.add(id);
+          changed = true;
+        }
+      });
+      if (changed) StorageService.saveAttempted(this.attemptedIds);
+    }
+
+    recordDailyActivity(questionIds = [], testResultPct = null) {
+      const today = StorageService.todayKey();
+      if (!this.dailyHistory[today]) {
+        this.dailyHistory[today] = { qIds: [], tests: 0, bestPct: 0 };
+      }
+      const entry = this.dailyHistory[today];
+      const set = new Set(entry.qIds || []);
+      questionIds.forEach((id) => set.add(id));
+      entry.qIds = Array.from(set);
+
+      if (typeof testResultPct === 'number') {
+        entry.tests = (entry.tests || 0) + 1;
+        entry.bestPct = Math.max(entry.bestPct || 0, testResultPct);
+      }
+      StorageService.saveDailyHistory(this.dailyHistory);
+    }
+
+    recordSubjectExamStat(subjectKey, correct, total) {
+      if (!subjectKey) return;
+      const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+      if (!this.moduleStats[subjectKey]) {
+        this.moduleStats[subjectKey] = { latest: null, history: [] };
+      }
+      const entry = {
+        date: new Date().toLocaleDateString('vi-VN'),
+        correct,
+        total,
+        pct
+      };
+      this.moduleStats[subjectKey].latest = { correct, total, percentage: pct };
+      this.moduleStats[subjectKey].history.unshift(entry);
+      if (this.moduleStats[subjectKey].history.length > 20) {
+        this.moduleStats[subjectKey].history = this.moduleStats[subjectKey].history.slice(0, 20);
+      }
+      StorageService.saveModuleStats(this.moduleStats);
+    }
+
+    getStreakInfo() {
+      const today = new Date();
+      const last7 = [];
+      let activeDays = 0;
+
+      for (let offset = 6; offset >= 0; offset--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - offset);
+        const key = StorageService.todayKey(d);
+        const rec = this.dailyHistory[key];
+        const count = rec ? (rec.qIds?.length || 0) : 0;
+        const tests = rec ? (rec.tests || 0) : 0;
+        const active = count > 0 || tests > 0;
+        last7.push({
+          key,
+          label: key,
+          count,
+          active
+        });
+      }
+
+      let currentStreak = 0;
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const key = StorageService.todayKey(d);
+        const rec = this.dailyHistory[key];
+        const active = rec && ((rec.qIds?.length || 0) > 0 || (rec.tests || 0) > 0);
+        if (active) {
+          currentStreak++;
+        } else if (i > 0) {
+          break;
         }
       }
 
-      return `
-        <button data-action="study-pick" data-key="${escapeHtml(opt.key)}" class="w-full text-left p-4 rounded-xl border transition flex items-start gap-3.5 ${cls}">
-          <span class="w-7 h-7 rounded-lg border flex items-center justify-center text-xs font-bold shrink-0 ${badgeCls}">${escapeHtml(opt.key)}</span>
-          <span class="text-sm leading-relaxed whitespace-pre-wrap pt-0.5">${escapeHtml(opt.text)}</span>
-        </button>
-      `;
-    }).join('');
+      const sortedKeys = Object.keys(this.dailyHistory)
+        .filter((k) => (this.dailyHistory[k]?.qIds?.length || 0) > 0 || (this.dailyHistory[k]?.tests || 0) > 0)
+        .sort();
+      let best = currentStreak;
+      let run = 0;
+      let prevDate = null;
+      sortedKeys.forEach((k) => {
+        const curDate = new Date(`${k}T00:00:00`);
+        if (prevDate && (curDate - prevDate) === 86400000) {
+          run++;
+        } else {
+          run = 1;
+        }
+        best = Math.max(best, run);
+        prevDate = curDate;
+      });
 
-    return `
-      <div class="space-y-5 max-w-4xl mx-auto">
-        ${filterBar}
-
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="font-mono text-xs font-bold px-2.5 py-1 rounded-lg border ${meta.badge}">${escapeHtml(q.id)}</span>
-              ${getDifficultyBadge(q.difficulty)}
-              <span class="text-xs text-slate-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">${escapeHtml(q.topic)}</span>
-              ${prog.masteryStatus === 'mastered' ? '<span class="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-lg">✓ Đã thuộc</span>' : ''}
-              ${prog.masteryStatus === 'review_needed' ? '<span class="text-[11px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-lg">↻ Cần ôn lại</span>' : ''}
-            </div>
-
-            <div class="flex items-center gap-2">
-              ${slidePath ? `
-                <button data-action="toggle-slide-panel" class="px-2.5 py-1.5 rounded-lg text-xs border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5 transition" title="Thông tin slide gốc">
-                  <i data-lucide="image" class="w-3.5 h-3.5"></i>
-                  <span>Slide ${escapeHtml(q.imageFileName || '')}</span>
-                </button>
-              ` : ''}
-              <button data-action="bookmark" data-id="${escapeHtml(q.id)}" class="p-2 rounded-lg border transition ${
-                prog.bookmarked ? 'bg-amber-500/15 border-amber-500/40 text-amber-400' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-amber-300'
-              }" title="Đánh dấu câu hỏi">
-                <i data-lucide="bookmark" class="w-4 h-4"></i>
-              </button>
-            </div>
-          </div>
-
-          ${state.study.showSlidePanel && slidePath ? `
-            <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2">
-              <div class="flex items-center justify-between text-xs text-slate-400">
-                <span>Đường dẫn Slide gốc: <code class="text-indigo-300 font-mono">${escapeHtml(slidePath)}</code></span>
-              </div>
-              <img src="${escapeHtml(slidePath)}" alt="Slide ${escapeHtml(q.id)}" class="max-h-96 rounded-xl mx-auto border border-slate-800"
-                onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-              <div style="display:none" class="text-xs text-slate-400 py-3 text-center bg-slate-900/60 rounded-xl border border-dashed border-slate-700">
-                Chưa có tệp ảnh cục bộ tại <code class="text-amber-300">${escapeHtml(slidePath)}</code>. Nội dung văn bản, code và đáp án đầy đủ đã được hiển thị bên dưới.
-              </div>
-            </div>
-          ` : ''}
-
-          <div class="space-y-4">
-            <h2 class="text-base sm:text-lg font-semibold text-white leading-relaxed whitespace-pre-wrap">${escapeHtml(q.questionText)}</h2>
-            ${q.codeSnippet && q.codeSnippet.trim() ? `
-              <pre class="bg-slate-950 border border-slate-800 rounded-2xl p-4 overflow-x-auto text-xs sm:text-sm font-mono text-indigo-200 leading-relaxed"><code>${escapeHtml(q.codeSnippet)}</code></pre>
-            ` : ''}
-          </div>
-
-          <div class="space-y-2.5">
-            ${optionsHtml}
-          </div>
-
-          ${(answered || state.study.showExplanation) ? `
-            <div class="rounded-2xl p-5 border space-y-2.5 ${
-              answered
-                ? (isCorrect ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-rose-950/30 border-rose-500/40')
-                : 'bg-indigo-950/30 border-indigo-500/40'
-            }">
-              <div class="flex items-center justify-between">
-                <div class="text-sm font-bold flex items-center gap-2 ${
-                  answered ? (isCorrect ? 'text-emerald-300' : 'text-rose-300') : 'text-indigo-300'
-                }">
-                  <i data-lucide="${answered ? (isCorrect ? 'check-circle-2' : 'x-circle') : 'lightbulb'}" class="w-4 h-4"></i>
-                  <span>${answered ? (isCorrect ? 'Chính xác!' : `Chưa đúng — Đáp án đúng là ${escapeHtml(q.correctAnswer)}`) : `Đáp án đúng: ${escapeHtml(q.correctAnswer)}`}</span>
-                </div>
-              </div>
-              <p class="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">${escapeHtml(q.explanation || 'Không có giải thích bổ sung.')}</p>
-              ${q.speakerNote && q.speakerNote.trim() && q.speakerNote.trim() !== (q.explanation || '').trim() ? `
-                <div class="pt-2 border-t border-slate-800/70 text-xs text-slate-400">
-                  <strong class="text-slate-300">Ghi chú thêm:</strong> ${escapeHtml(q.speakerNote)}
-                </div>
-              ` : ''}
-            </div>
-          ` : ''}
-
-          <div class="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
-              <button data-action="study-prev" ${state.study.index === 0 ? 'disabled' : ''} class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white flex items-center gap-1.5 transition">
-                <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                <span>Câu trước</span>
-              </button>
-              <button data-action="study-next" ${state.study.index >= list.length - 1 ? 'disabled' : ''} class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white flex items-center gap-1.5 transition">
-                <span>Câu tiếp</span>
-                <i data-lucide="chevron-right" class="w-4 h-4"></i>
-              </button>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-2">
-              <button data-action="study-toggle-exp" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-950 border border-slate-700 hover:border-indigo-500 text-slate-300 transition">
-                ${state.study.showExplanation ? 'Ẩn đáp án' : 'Xem đáp án'}
-              </button>
-              <button data-action="study-mark" data-status="review_needed" data-id="${escapeHtml(q.id)}" class="px-3 py-2 rounded-xl text-xs font-semibold bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 transition">
-                Cần ôn lại
-              </button>
-              <button data-action="study-mark" data-status="mastered" data-id="${escapeHtml(q.id)}" class="px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 transition">
-                Đã thuộc
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  function getFlashcardList() {
-    const base = state.questions.filter(q => {
-      if (state.flashcards.subject !== 'ALL' && q.subject !== state.flashcards.subject) return false;
-      if (state.flashcards.topic !== 'ALL' && q.topic !== state.flashcards.topic) return false;
-      return true;
-    });
-    if (state.flashcards.shuffledOrder && state.flashcards.shuffledOrder.length === base.length) {
-      return state.flashcards.shuffledOrder.map(i => base[i]);
+      const todayRec = this.dailyHistory[StorageService.todayKey(today)];
+      return {
+        current: currentStreak,
+        best,
+        todayCount: todayRec?.qIds?.length || 0,
+        last7,
+        activeDays
+      };
     }
-    return base;
   }
 
-  function renderFlashcards() {
-    const list = getFlashcardList();
-    if (state.flashcards.index >= list.length) state.flashcards.index = Math.max(0, list.length - 1);
-    const q = list[state.flashcards.index];
-    const topics = getTopicsForSubject(state.flashcards.subject);
+  // =========================================================================
+  // 5. STUDY CONTROLLER
+  // =========================================================================
 
-    const toolbar = `
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center gap-3">
-        <select id="fc-subject" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-          ${Object.keys(SUBJECT_META).map(c => `<option value="${c}" ${state.flashcards.subject === c ? 'selected' : ''}>${c} - ${escapeHtml(SUBJECT_META[c].short)}</option>`).join('')}
-        </select>
-        <select id="fc-topic" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white max-w-xs">
-          <option value="ALL" ${state.flashcards.topic === 'ALL' ? 'selected' : ''}>Tất cả chủ đề</option>
-          ${topics.map(t => `<option value="${escapeHtml(t.topic)}" ${state.flashcards.topic === t.topic ? 'selected' : ''}>${escapeHtml(t.topic)} (${t.count})</option>`).join('')}
-        </select>
-        <button data-action="fc-shuffle" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1.5 transition">
-          <i data-lucide="shuffle" class="w-3.5 h-3.5"></i>
-          <span>Trộn thẻ</span>
-        </button>
-        <div class="ml-auto text-xs text-slate-400 font-mono">Thẻ ${list.length ? state.flashcards.index + 1 : 0} / ${list.length}</div>
-      </div>
-    `;
+  class StudyController {
+    constructor(dataStore, app) {
+      this.dataStore = dataStore;
+      this.app = app;
+      this.BATCH_SIZE = 35;
 
-    if (!q) return toolbar;
-    const correctOpt = q.options.find(o => o.key === q.correctAnswer);
+      this.currentSubject = 'all';
+      this.topicFilter = 'ALL';
+      this.difficultyFilter = 'ALL';
+      this.searchQuery = '';
+      this.hideAnswers = false;
+      this.selfTestMode = false;
+      this.starredOnly = false;
+      this.selfSelectedMap = new Map(); // qid -> selectedKey
 
-    return `
-      <div class="space-y-6 max-w-3xl mx-auto">
-        ${toolbar}
+      this.currentFilteredList = [];
+      this.renderedCount = 0;
+      this.railOpen = false;
+      this.activeQuestionIndex = 0;
+    }
 
-        <div data-action="fc-flip" class="cursor-pointer perspective-1000 select-none">
-          <div class="bg-slate-900/95 border border-slate-800 hover:border-indigo-500/40 rounded-3xl p-6 sm:p-10 min-h-[380px] flex flex-col justify-between shadow-2xl transition-all">
-            ${!state.flashcards.flipped ? `
-              <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                  <span class="font-mono text-xs font-bold text-indigo-400">${escapeHtml(q.id)} • ${escapeHtml(q.topic)}</span>
-                  <span class="text-[11px] text-slate-500">Nhấn vào thẻ hoặc Space để lật</span>
-                </div>
-                <h2 class="text-lg sm:text-xl font-bold text-white leading-relaxed whitespace-pre-wrap pt-2">${escapeHtml(q.questionText)}</h2>
-                ${q.codeSnippet && q.codeSnippet.trim() ? `
-                  <pre class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs font-mono text-indigo-200 overflow-x-auto"><code>${escapeHtml(q.codeSnippet)}</code></pre>
-                ` : ''}
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
-                  ${q.options.map(o => `
-                    <div class="bg-slate-950/80 border border-slate-800/80 rounded-xl px-3 py-2 text-xs text-slate-300">
-                      <strong class="text-indigo-400 mr-1">${escapeHtml(o.key)}.</strong>${escapeHtml(o.text)}
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-              <div class="text-center text-xs text-slate-500 pt-4">Mặt trước — Câu hỏi</div>
-            ` : `
-              <div class="space-y-5">
-                <div class="flex items-center justify-between">
-                  <span class="px-3 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
-                    Đáp án đúng: ${escapeHtml(q.correctAnswer)}
-                  </span>
-                  <span class="text-[11px] text-slate-500">Nhấn Space để lật lại</span>
-                </div>
-                ${correctOpt ? `
-                  <div class="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 text-base font-semibold text-emerald-100">
-                    ${escapeHtml(correctOpt.key)}. ${escapeHtml(correctOpt.text)}
-                  </div>
-                ` : ''}
-                <div class="space-y-2">
-                  <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Giải thích chi tiết</div>
-                  <p class="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">${escapeHtml(q.explanation || 'Không có giải thích.')}</p>
-                </div>
-              </div>
-              <div class="text-center text-xs text-slate-500 pt-4">Mặt sau — Đáp án &amp; Giải thích</div>
-            `}
-          </div>
-        </div>
+    init() {
+      this.populateTopicSelect();
+      this.updateHeaderMeta();
+      this.bindEvents();
+    }
 
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-2">
-            <button data-action="fc-prev" ${state.flashcards.index === 0 ? 'disabled' : ''} class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-xs font-semibold text-white flex items-center gap-1.5">
-              <i data-lucide="arrow-left" class="w-4 h-4"></i>
-              <span>Trước</span>
-            </button>
-            <button data-action="fc-next" ${state.flashcards.index >= list.length - 1 ? 'disabled' : ''} class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-xs font-semibold text-white flex items-center gap-1.5">
-              <span>Tiếp</span>
-              <i data-lucide="arrow-right" class="w-4 h-4"></i>
-            </button>
-          </div>
-          <div class="flex items-center gap-2">
-            <button data-action="fc-rate" data-status="review_needed" data-id="${escapeHtml(q.id)}" class="px-4 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-semibold">
-              Cần ôn lại
-            </button>
-            <button data-action="fc-rate" data-status="mastered" data-id="${escapeHtml(q.id)}" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold">
-              Đã nhớ &amp; Tiếp tục
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  function getBankFiltered() {
-    const query = state.bank.query.trim().toLowerCase();
-    return state.questions.filter(q => {
-      if (state.bank.subject !== 'ALL' && q.subject !== state.bank.subject) return false;
-      if (state.bank.topic !== 'ALL' && q.topic !== state.bank.topic) return false;
-      if (state.bank.difficulty !== 'ALL' && q.difficulty !== state.bank.difficulty) return false;
-      const p = getProgress(q.id);
-      if (state.bank.filterStatus === 'bookmarked' && !p.bookmarked) return false;
-      if (state.bank.filterStatus === 'mastered' && p.masteryStatus !== 'mastered') return false;
-      if (state.bank.filterStatus === 'review_needed' && p.masteryStatus !== 'review_needed') return false;
-      if (query) {
-        const hay = `${q.id} ${q.topic} ${q.questionText} ${q.codeSnippet || ''} ${q.explanation || ''} ${q.options.map(o => o.text).join(' ')}`.toLowerCase();
-        if (!hay.includes(query)) return false;
+    bindEvents() {
+      const topicEl = document.getElementById('studyTopicSelect');
+      if (topicEl) {
+        topicEl.onchange = () => {
+          this.topicFilter = topicEl.value;
+          this.render();
+        };
       }
-      return true;
-    });
-  }
 
-  function renderQuestionBank() {
-    const filtered = getBankFiltered();
-    const totalPages = Math.max(1, Math.ceil(filtered.length / state.bank.pageSize));
-    if (state.bank.page > totalPages) state.bank.page = totalPages;
-    const start = (state.bank.page - 1) * state.bank.pageSize;
-    const slice = filtered.slice(start, start + state.bank.pageSize);
-    const topics = getTopicsForSubject(state.bank.subject);
-
-    const rowsHtml = slice.map(q => {
-      const expanded = state.bank.expandedIds.has(q.id);
-      const prog = getProgress(q.id);
-      const meta = SUBJECT_META[q.subject] || SUBJECT_META.CSD203;
-      return `
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="font-mono text-xs font-bold px-2 py-0.5 rounded border ${meta.badge}">${escapeHtml(q.id)}</span>
-              ${getDifficultyBadge(q.difficulty)}
-              <span class="text-xs text-slate-400">${escapeHtml(q.topic)}</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <button data-action="bookmark" data-id="${escapeHtml(q.id)}" class="p-1.5 rounded-lg border text-xs ${prog.bookmarked ? 'bg-amber-500/15 border-amber-500/40 text-amber-400' : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-amber-300'}">
-                <i data-lucide="bookmark" class="w-3.5 h-3.5"></i>
-              </button>
-              <a href="/study?id=${escapeHtml(q.id)}" data-route="/study?id=${escapeHtml(q.id)}" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 transition">
-                Luyện câu này
-              </a>
-              <button data-action="bank-toggle" data-id="${escapeHtml(q.id)}" class="px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 text-xs font-medium transition">
-                ${expanded ? 'Thu gọn' : 'Xem đáp án'}
-              </button>
-            </div>
-          </div>
-
-          <p class="text-sm text-slate-100 leading-relaxed whitespace-pre-wrap">${escapeHtml(q.questionText)}</p>
-          ${q.codeSnippet && q.codeSnippet.trim() ? `
-            <pre class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-indigo-200 overflow-x-auto"><code>${escapeHtml(q.codeSnippet)}</code></pre>
-          ` : ''}
-
-          ${expanded ? `
-            <div class="pt-3 border-t border-slate-800/80 space-y-3">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                ${q.options.map(o => `
-                  <div class="p-2.5 rounded-xl border text-xs ${
-                    o.key === q.correctAnswer
-                      ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-200 font-semibold'
-                      : 'bg-slate-950/60 border-slate-800 text-slate-400'
-                  }">
-                    <strong class="mr-1">${escapeHtml(o.key)}.</strong> ${escapeHtml(o.text)}
-                  </div>
-                `).join('')}
-              </div>
-              <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
-                <strong class="text-emerald-400">Giải thích:</strong> ${escapeHtml(q.explanation || 'Không có')}
-              </div>
-            </div>
-          ` : ''}
-        </div>
-      `;
-    }).join('');
-
-    return `
-      <div class="space-y-5">
-        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-3">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            <div class="lg:col-span-2 relative">
-              <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3 top-2.5"></i>
-              <input id="bank-search" type="text" value="${escapeHtml(state.bank.query)}" placeholder="Tìm theo từ khóa, mã câu hỏi (vd: CSD203-Q001, SQL, AVL...)"
-                class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
-            </div>
-            <select id="bank-subject" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-              <option value="ALL" ${state.bank.subject === 'ALL' ? 'selected' : ''}>Tất cả môn (${state.questions.length})</option>
-              ${Object.keys(SUBJECT_META).map(c => `<option value="${c}" ${state.bank.subject === c ? 'selected' : ''}>${c}</option>`).join('')}
-            </select>
-            <select id="bank-difficulty" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-              <option value="ALL" ${state.bank.difficulty === 'ALL' ? 'selected' : ''}>Mọi độ khó</option>
-              <option value="Easy" ${state.bank.difficulty === 'Easy' ? 'selected' : ''}>Easy</option>
-              <option value="Medium" ${state.bank.difficulty === 'Medium' ? 'selected' : ''}>Medium</option>
-              <option value="Hard" ${state.bank.difficulty === 'Hard' ? 'selected' : ''}>Hard</option>
-            </select>
-            <select id="bank-status" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-              <option value="ALL" ${state.bank.filterStatus === 'ALL' ? 'selected' : ''}>Tất cả trạng thái</option>
-              <option value="bookmarked" ${state.bank.filterStatus === 'bookmarked' ? 'selected' : ''}>Đã đánh dấu</option>
-              <option value="mastered" ${state.bank.filterStatus === 'mastered' ? 'selected' : ''}>Đã thuộc</option>
-              <option value="review_needed" ${state.bank.filterStatus === 'review_needed' ? 'selected' : ''}>Cần ôn lại</option>
-            </select>
-          </div>
-          <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
-            <select id="bank-topic" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-300 max-w-md">
-              <option value="ALL" ${state.bank.topic === 'ALL' ? 'selected' : ''}>Tất cả chủ đề</option>
-              ${topics.map(t => `<option value="${escapeHtml(t.topic)}" ${state.bank.topic === t.topic ? 'selected' : ''}>${escapeHtml(t.topic)} (${t.count})</option>`).join('')}
-            </select>
-            <span>Tìm thấy <strong class="text-white">${filtered.length}</strong> câu hỏi • Trang ${state.bank.page}/${totalPages}</span>
-          </div>
-        </div>
-
-        <div class="space-y-3">
-          ${rowsHtml || '<div class="text-center py-12 text-sm text-slate-400 bg-slate-900/50 rounded-2xl border border-slate-800">Không có kết quả nào phù hợp.</div>'}
-        </div>
-
-        ${totalPages > 1 ? `
-          <div class="flex items-center justify-center gap-2 pt-2">
-            <button data-action="bank-page" data-page="${state.bank.page - 1}" ${state.bank.page <= 1 ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-xs text-white">Trang trước</button>
-            <span class="text-xs text-slate-400 px-2">Trang ${state.bank.page} / ${totalPages}</span>
-            <button data-action="bank-page" data-page="${state.bank.page + 1}" ${state.bank.page >= totalPages ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-xs text-white">Trang sau</button>
-          </div>
-        ` : ''}
-      </div>
-    `;
-  }
-
-  function formatTime(sec) {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  }
-
-  function startExam() {
-    const pool = state.questions.filter(q => state.exam.subject === 'ALL' || q.subject === state.exam.subject);
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    const items = shuffled.slice(0, Math.min(state.exam.count, shuffled.length));
-
-    if (state.exam.timerId) clearInterval(state.exam.timerId);
-    state.exam.items = items;
-    state.exam.answers = {};
-    state.exam.flagged = new Set();
-    state.exam.currentIndex = 0;
-    state.exam.secondsLeft = state.exam.minutes * 60;
-    state.exam.mode = 'active';
-    state.exam.timerId = setInterval(() => {
-      state.exam.secondsLeft--;
-      const timerEl = document.getElementById('exam-timer');
-      if (timerEl) timerEl.textContent = formatTime(Math.max(0, state.exam.secondsLeft));
-      if (state.exam.secondsLeft <= 0) {
-        submitExam();
+      const diffEl = document.getElementById('studyDifficultySelect');
+      if (diffEl) {
+        diffEl.onchange = () => {
+          this.difficultyFilter = diffEl.value;
+          this.render();
+        };
       }
-    }, 1000);
-    render();
-  }
 
-  function submitExam() {
-    if (state.exam.timerId) {
-      clearInterval(state.exam.timerId);
-      state.exam.timerId = null;
-    }
-    let correct = 0;
-    state.exam.items.forEach((q, idx) => {
-      const picked = state.exam.answers[idx];
-      const ok = picked === q.correctAnswer;
-      if (ok) correct++;
-      if (picked) {
-        setMastery(q.id, ok ? 'mastered' : 'review_needed', ok);
+      const resetBtn = document.getElementById('studyResetFiltersBtn');
+      if (resetBtn) {
+        resetBtn.onclick = () => {
+          this.topicFilter = 'ALL';
+          this.difficultyFilter = 'ALL';
+          this.searchQuery = '';
+          this.starredOnly = false;
+          const sInput = document.getElementById('searchInput');
+          if (sInput) sInput.value = '';
+          if (topicEl) topicEl.value = 'ALL';
+          if (diffEl) diffEl.value = 'ALL';
+          const starBtn = document.getElementById('filterStarredOnlyBtn');
+          if (starBtn) starBtn.classList.remove('active');
+          this.render();
+        };
       }
-    });
-    const total = state.exam.items.length || 1;
-    const scorePercentage = Math.round((correct / total) * 100);
-    const result = {
-      id: 'EX-' + Date.now(),
-      subject: state.exam.subject,
-      totalQuestions: total,
-      correctCount: correct,
-      scorePercentage,
-      createdAt: new Date().toISOString(),
-    };
-    state.exams.unshift(result);
-    if (state.exams.length > 30) state.exams.length = 30;
-    saveExams();
-    state.exam.lastResult = result;
-    state.exam.mode = 'review';
-    render();
-  }
 
-  function renderExam() {
-    if (state.exam.mode === 'setup') {
-      return `
-        <div class="max-w-3xl mx-auto space-y-6">
-          <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
-            <div class="space-y-1">
-              <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                <i data-lucide="timer" class="w-5 h-5 text-amber-400"></i>
-                <span>Thiết lập bài thi thử EOS</span>
-              </h2>
-              <p class="text-xs text-slate-400">Câu hỏi được chọn ngẫu nhiên từ ngân hàng đề của môn học và tính giờ giống phòng thi thực tế.</p>
-            </div>
+      const toggleAnsBtn = document.getElementById('toggleAnswersBtn');
+      if (toggleAnsBtn) {
+        toggleAnsBtn.onclick = () => {
+          this.hideAnswers = !this.hideAnswers;
+          const lbl = document.getElementById('toggleAnswersText');
+          if (lbl) lbl.innerText = this.hideAnswers ? 'Hiện đáp án' : 'Ẩn đáp án';
+          toggleAnsBtn.classList.toggle('active', this.hideAnswers);
+          this.render();
+        };
+      }
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div class="space-y-1.5">
-                <label class="text-xs font-semibold text-slate-300">Môn thi</label>
-                <select id="exam-subject" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white">
-                  ${Object.keys(SUBJECT_META).map(c => `<option value="${c}" ${state.exam.subject === c ? 'selected' : ''}>${c}</option>`).join('')}
-                  <option value="ALL" ${state.exam.subject === 'ALL' ? 'selected' : ''}>Tổng hợp tất cả môn</option>
-                </select>
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-xs font-semibold text-slate-300">Số câu hỏi</label>
-                <select id="exam-count" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white">
-                  ${[10, 25, 40, 50, 60].map(n => `<option value="${n}" ${state.exam.count === n ? 'selected' : ''}>${n} câu</option>`).join('')}
-                </select>
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-xs font-semibold text-slate-300">Thời gian làm bài</label>
-                <select id="exam-minutes" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white">
-                  ${[15, 30, 45, 60].map(m => `<option value="${m}" ${state.exam.minutes === m ? 'selected' : ''}>${m} phút</option>`).join('')}
-                </select>
-              </div>
-            </div>
+      const toggleInterBtn = document.getElementById('toggleInteractiveBtn');
+      if (toggleInterBtn) {
+        toggleInterBtn.onclick = () => {
+          this.selfTestMode = !this.selfTestMode;
+          toggleInterBtn.classList.toggle('active', this.selfTestMode);
+          toggleInterBtn.innerText = this.selfTestMode ? 'Chế độ: Tự kiểm tra' : 'Chế độ: Xem đáp án';
+          if (!this.selfTestMode) this.selfSelectedMap.clear();
+          this.render();
+        };
+      }
 
-            <button data-action="exam-start" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/25 transition flex items-center justify-center gap-2">
-              <i data-lucide="play-circle" class="w-4 h-4"></i>
-              <span>Bắt đầu làm bài ngay</span>
-            </button>
-          </div>
+      const starOnlyBtn = document.getElementById('filterStarredOnlyBtn');
+      if (starOnlyBtn) {
+        starOnlyBtn.onclick = () => this.toggleStarredOnly();
+      }
 
-          ${state.exams.length > 0 ? `
-            <div class="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 space-y-3">
-              <h3 class="text-sm font-bold text-white">Lịch sử thi thử gần đây</h3>
-              <div class="space-y-2">
-                ${state.exams.slice(0, 8).map(ex => `
-                  <div class="flex items-center justify-between bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-2.5 text-xs">
-                    <div class="flex items-center gap-3">
-                      <span class="font-mono font-bold text-indigo-400">${escapeHtml(ex.subject)}</span>
-                      <span class="text-slate-400">${ex.correctCount}/${ex.totalQuestions} câu đúng</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                      <span class="font-bold ${ex.scorePercentage >= 60 ? 'text-emerald-400' : 'text-rose-400'}">${ex.scorePercentage}%</span>
-                      <span class="text-slate-500 text-[11px]">${new Date(ex.createdAt).toLocaleString('vi-VN')}</span>
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          ` : ''}
-        </div>
-      `;
+      const startExamBtn = document.getElementById('startExamFromStudyBtn');
+      if (startExamBtn) {
+        startExamBtn.onclick = () => {
+          this.app.startQuickSubjectExam(this.currentSubject);
+        };
+      }
+
+      // Study Nav Rail Toggle
+      const rail = document.getElementById('studyNavRail');
+      const railToggle = document.getElementById('studyNavRailToggle');
+      const railClose = document.getElementById('studyNavRailCloseBtn');
+      if (rail && railToggle) {
+        railToggle.onclick = (e) => {
+          e.stopPropagation();
+          this.railOpen = !this.railOpen;
+          rail.classList.toggle('open', this.railOpen);
+        };
+      }
+      if (rail && railClose) {
+        railClose.onclick = (e) => {
+          e.stopPropagation();
+          this.railOpen = false;
+          rail.classList.remove('open');
+        };
+      }
     }
 
-    if (state.exam.mode === 'active') {
-      const idx = state.exam.currentIndex;
-      const q = state.exam.items[idx];
-      const picked = state.exam.answers[idx];
-      const answeredCount = Object.keys(state.exam.answers).length;
+    setSubject(subjectKey) {
+      this.currentSubject = subjectKey || 'all';
+      this.topicFilter = 'ALL';
+      this.populateTopicSelect();
+      this.updateHeaderMeta();
+      this.render();
+    }
 
-      return `
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div class="lg:col-span-3 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-5">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div class="flex items-center gap-2">
-                <span class="font-mono text-xs font-bold text-indigo-400">Câu ${idx + 1} / ${state.exam.items.length}</span>
-                <span class="text-xs text-slate-400">(${escapeHtml(q.id)})</span>
-              </div>
-              <button data-action="exam-flag" data-idx="${idx}" class="px-2.5 py-1 rounded-lg text-xs border ${state.exam.flagged.has(idx) ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-slate-950 border-slate-800 text-slate-400'}">
-                ⚑ Đánh dấu xem lại
-              </button>
-            </div>
+    setSearch(query) {
+      this.searchQuery = String(query || '').trim().toLowerCase();
+      this.render();
+    }
 
-            <div class="space-y-4">
-              <p class="text-base font-semibold text-white leading-relaxed whitespace-pre-wrap">${escapeHtml(q.questionText)}</p>
-              ${q.codeSnippet && q.codeSnippet.trim() ? `<pre class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs font-mono text-indigo-200 overflow-x-auto"><code>${escapeHtml(q.codeSnippet)}</code></pre>` : ''}
-            </div>
+    toggleStarredOnly(forceState = null) {
+      this.starredOnly = forceState !== null ? Boolean(forceState) : !this.starredOnly;
+      const btn = document.getElementById('filterStarredOnlyBtn');
+      if (btn) {
+        btn.classList.toggle('active', this.starredOnly);
+        btn.innerText = this.starredOnly ? 'Hiện tất cả câu' : 'Hiện câu đã lưu';
+      }
+      this.render();
+    }
 
-            <div class="space-y-2.5">
-              ${q.options.map(o => `
-                <button data-action="exam-pick" data-idx="${idx}" data-key="${escapeHtml(o.key)}" class="w-full text-left p-4 rounded-xl border transition flex items-start gap-3 ${
-                  picked === o.key
-                    ? 'bg-indigo-600/20 border-indigo-500 text-white'
-                    : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-300'
-                }">
-                  <span class="w-6 h-6 rounded-md border flex items-center justify-center text-xs font-bold shrink-0 ${
-                    picked === o.key ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
-                  }">${escapeHtml(o.key)}</span>
-                  <span class="text-sm whitespace-pre-wrap">${escapeHtml(o.text)}</span>
-                </button>
-              `).join('')}
-            </div>
+    populateTopicSelect() {
+      const sel = document.getElementById('studyTopicSelect');
+      if (!sel) return;
+      const topics = this.dataStore.getTopics(this.currentSubject);
+      sel.innerHTML = `<option value="ALL">Tất cả chủ đề (${topics.length})</option>` +
+        topics.map((t) => `<option value="${Utils.escapeHtml(t)}">${Utils.escapeHtml(t)}</option>`).join('');
+      sel.value = this.topicFilter;
+    }
 
-            <div class="flex items-center justify-between pt-4 border-t border-slate-800">
-              <button data-action="exam-goto" data-idx="${idx - 1}" ${idx === 0 ? 'disabled' : ''} class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-xs font-semibold text-white">Câu trước</button>
-              <button data-action="exam-goto" data-idx="${idx + 1}" ${idx >= state.exam.items.length - 1 ? 'disabled' : ''} class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-xs font-semibold text-white">Câu tiếp</button>
-            </div>
+    updateHeaderMeta() {
+      const info = SUBJECT_INFO[this.currentSubject] || SUBJECT_INFO.all;
+      const count = this.dataStore.getQuestionsBySubject(this.currentSubject).length;
+      const titleEl = document.getElementById('studyModuleTitle');
+      const descEl = document.getElementById('studyModuleDesc');
+      if (titleEl) titleEl.innerText = info.name;
+      if (descEl) descEl.innerText = `${count} câu hỏi trắc nghiệm & giải thích chi tiết (${info.short}).`;
+    }
+
+    getFilteredQuestions() {
+      let pool = this.dataStore.getQuestionsBySubject(this.currentSubject);
+
+      if (this.topicFilter && this.topicFilter !== 'ALL') {
+        pool = pool.filter((q) => q.topic === this.topicFilter);
+      }
+
+      if (this.difficultyFilter && this.difficultyFilter !== 'ALL') {
+        pool = pool.filter((q) => q.difficulty.toLowerCase() === this.difficultyFilter.toLowerCase());
+      }
+
+      if (this.starredOnly) {
+        pool = pool.filter((q) => this.dataStore.starredIds.has(q.id));
+      }
+
+      if (this.searchQuery) {
+        const kw = this.searchQuery;
+        pool = pool.filter((q) => {
+          const optText = q.options.map((o) => o.text).join(' ');
+          const haystack = `${q.id} ${q.subject} ${q.topic} ${q.questionText} ${q.codeSnippet} ${optText} ${q.explanation}`.toLowerCase();
+          return haystack.includes(kw);
+        });
+      }
+
+      return pool;
+    }
+
+    render() {
+      const listEl = document.getElementById('studyQuestionsList');
+      if (!listEl) return;
+
+      this.currentFilteredList = this.getFilteredQuestions();
+      this.renderedCount = 0;
+      listEl.innerHTML = '';
+
+      const totalSubject = this.dataStore.getQuestionsBySubject(this.currentSubject).length;
+      const summaryEl = document.getElementById('studyFilterSummary');
+      if (summaryEl) {
+        summaryEl.innerText = `Hiển thị ${this.currentFilteredList.length} / ${totalSubject} câu`;
+      }
+
+      if (this.currentFilteredList.length === 0) {
+        listEl.innerHTML = `
+          <div class="study-card" style="text-align: center; padding: 2.5rem 1.5rem;">
+            <h3 style="margin-bottom: 0.5rem;">Không tìm thấy câu hỏi phù hợp</h3>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">Thử thay đổi từ khóa tìm kiếm, chủ đề, độ khó hoặc tắt bộ lọc "Đã lưu".</p>
           </div>
+        `;
+        this.updateStudyNavRail();
+        return;
+      }
 
-          <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 space-y-5 h-fit">
-            <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-center">
-              <div class="text-xs text-slate-400">Thời gian còn lại</div>
-              <div id="exam-timer" class="text-2xl font-mono font-extrabold text-amber-400 mt-1">${formatTime(state.exam.secondsLeft)}</div>
-              <div class="text-[11px] text-slate-500 mt-1">Đã trả lời: ${answeredCount}/${state.exam.items.length}</div>
+      this.renderNextBatch();
+      this.updateStudyNavRail();
+    }
+
+    renderNextBatch() {
+      const listEl = document.getElementById('studyQuestionsList');
+      if (!listEl) return;
+
+      const existingLoadMore = document.getElementById('studyLoadMoreContainer');
+      if (existingLoadMore) existingLoadMore.remove();
+
+      const frag = document.createDocumentFragment();
+      const end = Math.min(this.renderedCount + this.BATCH_SIZE, this.currentFilteredList.length);
+
+      for (let i = this.renderedCount; i < end; i++) {
+        const card = this.createQuestionCard(this.currentFilteredList[i], i);
+        frag.appendChild(card);
+      }
+
+      listEl.appendChild(frag);
+      this.renderedCount = end;
+
+      if (this.renderedCount < this.currentFilteredList.length) {
+        const wrap = document.createElement('div');
+        wrap.id = 'studyLoadMoreContainer';
+        wrap.style.cssText = 'text-align: center; margin: 24px 0 36px;';
+        wrap.innerHTML = `
+          <button type="button" class="btn btn-outline" id="btnStudyLoadMore" style="padding: 10px 24px; font-weight: 600;">
+            Tải thêm câu hỏi (${this.renderedCount} / ${this.currentFilteredList.length})
+          </button>
+        `;
+        const btn = wrap.querySelector('#btnStudyLoadMore');
+        if (btn) {
+          btn.onclick = () => {
+            this.renderNextBatch();
+            this.updateStudyNavRail();
+          };
+        }
+        listEl.appendChild(wrap);
+      }
+    }
+
+    createQuestionCard(q, index) {
+      const card = document.createElement('div');
+      card.className = 'study-card';
+      card.dataset.id = q.id;
+      card.dataset.qindex = index;
+
+      const isStarred = this.dataStore.starredIds.has(q.id);
+      const diffMeta = Utils.getDifficultyMeta(q.difficulty);
+      const pickedKey = this.selfSelectedMap.get(q.id) || null;
+      const isRevealed = this.selfTestMode ? Boolean(pickedKey) : !this.hideAnswers;
+
+      const codeHtml = q.codeSnippet ? Utils.renderCodeTerminal(q.codeSnippet, q.subject) : '';
+      const slideHtml = Utils.renderSlidePreview(q, false);
+
+      let optsHtml = '';
+      q.options.forEach((opt, optIdx) => {
+        const letter = opt.key || String.fromCharCode(65 + optIdx);
+        let cls = 'study-option';
+        let badge = '';
+
+        if (this.selfTestMode) {
+          cls += ' interactive-opt';
+          if (pickedKey) {
+            if (opt.isCorrect) {
+              cls += ' user-selected-correct';
+              badge = '<span class="study-option-badge badge-green">Đáp án đúng</span>';
+            } else if (pickedKey === letter) {
+              cls += ' user-selected-wrong';
+              badge = '<span class="study-option-badge badge-red">Bạn chọn (Sai)</span>';
+            }
+          }
+        } else if (opt.isCorrect && !this.hideAnswers) {
+          cls += ' correct';
+          badge = '<span class="study-option-badge">Đáp án đúng</span>';
+        }
+
+        optsHtml += `
+          <div class="${cls}" data-optkey="${letter}">
+            <span class="option-indicator">${letter}</span>
+            <div style="flex: 1;">${Utils.escapeHtml(opt.text)}</div>
+            ${badge}
+            <button type="button" class="copy-btn" title="Sao chép đáp án" data-copy="${Utils.escapeHtml(opt.text)}">Sao chép</button>
+          </div>
+        `;
+      });
+
+      let expHtml = '';
+      if ((q.explanation || q.speakerNote) && isRevealed) {
+        const noteBlock = q.speakerNote
+          ? `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(43, 147, 72, 0.25); font-size: 13px; color: var(--text-muted);"><strong>Ghi chú Slide:</strong> ${Utils.escapeHtml(q.speakerNote)}</div>`
+          : '';
+        expHtml = `
+          <div class="explanation-box">
+            <div class="exp-text">
+              <strong>Giải thích:</strong> ${q.explanation ? Utils.formatExplanation(q.explanation) : 'Xem đáp án được đánh dấu ở trên.'}
             </div>
+            ${noteBlock}
+          </div>
+        `;
+      }
 
-            <div class="grid grid-cols-5 gap-1.5">
-              ${state.exam.items.map((_, i) => {
-                const isCur = i === idx;
-                const isDone = Boolean(state.exam.answers[i]);
-                const isFlag = state.exam.flagged.has(i);
-                let cls = 'bg-slate-950 border-slate-800 text-slate-400';
-                if (isDone) cls = 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300';
-                if (isFlag) cls = 'bg-amber-500/20 border-amber-500/40 text-amber-300';
-                if (isCur) cls += ' ring-2 ring-indigo-500';
-                return `<button data-action="exam-goto" data-idx="${i}" class="h-8 rounded-lg border text-xs font-mono font-semibold ${cls}">${i + 1}</button>`;
-              }).join('')}
-            </div>
-
-            <button data-action="exam-submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition">
-              Nộp bài &amp; Chấm điểm
+      card.innerHTML = `
+        <div class="study-card-header">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span class="study-qnum">Câu ${index + 1}</span>
+            <span class="tag-badge">${Utils.escapeHtml(q.subject)}</span>
+            <span class="topic-pill-tag">${Utils.escapeHtml(q.topic)}</span>
+            <span class="diff-pill ${diffMeta.cls}">${diffMeta.label}</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span style="font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">${Utils.escapeHtml(q.id)}</span>
+            <button type="button" class="btn-star ${isStarred ? 'starred' : ''}" title="${isStarred ? 'Bỏ lưu câu này' : 'Lưu câu này'}">
+              ${isStarred ? '★' : '☆'}
             </button>
           </div>
         </div>
-      `;
-    }
 
-    const res = state.exam.lastResult;
-    const passed = res.scorePercentage >= 60;
-    return `
-      <div class="max-w-4xl mx-auto space-y-6">
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 flex flex-wrap items-center justify-between gap-4">
-          <div class="space-y-1">
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${passed ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">
-              ${passed ? 'ĐẠT YÊU CẦU (PASS)' : 'CHƯA ĐẠT — CẦN ÔN THÊM'}
-            </span>
-            <h2 class="text-2xl font-extrabold text-white pt-1">Kết quả: ${res.correctCount}/${res.totalQuestions} câu đúng (${res.scorePercentage}%)</h2>
-          </div>
-          <button data-action="exam-reset" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">Làm bài thi mới</button>
+        <div style="font-size: 15.5px; font-weight: 600; margin: 12px 0; line-height: 1.65;">
+          ${Utils.formatQuestionText(q.questionText)}
         </div>
 
-        <div class="space-y-3">
-          ${state.exam.items.map((q, i) => {
-            const picked = state.exam.answers[i];
-            const ok = picked === q.correctAnswer;
+        ${codeHtml}
+        ${slideHtml}
+        <div class="study-options">${optsHtml}</div>
+        ${expHtml}
+      `;
+
+      // Bind bookmark star
+      const starBtn = card.querySelector('.btn-star');
+      if (starBtn) {
+        starBtn.onclick = (e) => {
+          e.stopPropagation();
+          const starred = this.dataStore.toggleStar(q.id);
+          starBtn.classList.toggle('starred', starred);
+          starBtn.innerText = starred ? '★' : '☆';
+          this.app.updateBadges();
+          this.updateStudyNavRail();
+        };
+      }
+
+      // Bind copy option button
+      card.querySelectorAll('.copy-btn').forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          Utils.copyToClipboard(btn.getAttribute('data-copy') || '', btn);
+        };
+      });
+
+      // Bind interactive option click if in Self-Test Mode
+      if (this.selfTestMode) {
+        card.querySelectorAll('.study-option.interactive-opt').forEach((optEl) => {
+          optEl.onclick = (e) => {
+            if (e.target.closest('.copy-btn')) return;
+            const chosenKey = optEl.getAttribute('data-optkey');
+            this.selfSelectedMap.set(q.id, chosenKey);
+            const isOk = chosenKey === q.correctAnswer;
+            this.dataStore.markAttempted([q.id]);
+            this.dataStore.recordDailyActivity([q.id]);
+            if (isOk) {
+              this.dataStore.removeMistake(q.id);
+            } else {
+              this.dataStore.addMistake(q.id);
+            }
+            this.app.updateBadges();
+            const replacement = this.createQuestionCard(q, index);
+            card.replaceWith(replacement);
+          };
+        });
+      }
+
+      return card;
+    }
+
+    updateStudyNavRail() {
+      const railGrid = document.getElementById('studyNavRailGrid');
+      const railCount = document.getElementById('studyNavRailCount');
+      if (!railGrid) return;
+
+      const total = this.currentFilteredList.length;
+      if (railCount) railCount.innerText = total;
+      railGrid.innerHTML = '';
+
+      // Cap displayed grid buttons smoothly for huge sets (>300) if needed, or render efficiently
+      const frag = document.createDocumentFragment();
+      this.currentFilteredList.forEach((q, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'rail-qbtn';
+        btn.innerText = idx + 1;
+        btn.dataset.qid = q.id;
+        if (this.dataStore.starredIds.has(q.id)) btn.classList.add('starred');
+        if (idx === this.activeQuestionIndex) btn.classList.add('active-target');
+
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          this.activeQuestionIndex = idx;
+          while (this.renderedCount <= idx && this.renderedCount < this.currentFilteredList.length) {
+            this.renderNextBatch();
+          }
+          const targetCard = document.querySelector(`#studyQuestionsList .study-card[data-id="${q.id}"]`);
+          if (targetCard) {
+            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            targetCard.classList.remove('pulse-focus');
+            void targetCard.offsetWidth;
+            targetCard.classList.add('pulse-focus');
+            setTimeout(() => targetCard.classList.remove('pulse-focus'), 1400);
+          }
+          railGrid.querySelectorAll('.rail-qbtn').forEach((b) => b.classList.remove('active-target'));
+          btn.classList.add('active-target');
+        };
+        frag.appendChild(btn);
+      });
+      railGrid.appendChild(frag);
+    }
+  }
+
+  // =========================================================================
+  // 6. EXAM CONTROLLER (SEB MOCK & PRACTICE)
+  // =========================================================================
+
+  class ExamController {
+    constructor(dataStore, app) {
+      this.dataStore = dataStore;
+      this.app = app;
+      this.activeExam = null;
+      this.timerInterval = null;
+      this.config = StorageService.getExamConfig();
+    }
+
+    init() {
+      this.bindEvents();
+      this.syncSettingsModalInputs();
+    }
+
+    bindEvents() {
+      const prevBtn = document.getElementById('btnPrevQuestion');
+      if (prevBtn) prevBtn.onclick = () => this.prevQuestion();
+
+      const nextBtn = document.getElementById('btnNextQuestion');
+      if (nextBtn) {
+        nextBtn.onclick = () => {
+          if (!this.activeExam) return;
+          if (this.activeExam.currentIndex >= this.activeExam.questions.length - 1) {
+            this.openSubmitModal();
+          } else {
+            this.nextQuestion();
+          }
+        };
+      }
+
+      const markBtn = document.getElementById('btnMarkReview');
+      if (markBtn) markBtn.onclick = () => this.toggleMarkReview();
+
+      const clrBtn = document.getElementById('btnClearAnswer');
+      if (clrBtn) clrBtn.onclick = () => this.clearCurrentAnswer();
+
+      ['btnSubmitExam', 'submitExamTopBtn', 'sebSubmitBtn'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.onclick = () => this.openSubmitModal();
+      });
+
+      ['timerPauseBtn', 'sebPauseBtn'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.onclick = () => this.togglePause();
+      });
+
+      const cancelSubmit = document.getElementById('btnCancelSubmit');
+      if (cancelSubmit) {
+        cancelSubmit.onclick = () => this.closeModal('submitModal');
+      }
+
+      const confirmSubmit = document.getElementById('btnConfirmSubmit');
+      if (confirmSubmit) {
+        confirmSubmit.onclick = () => {
+          this.closeModal('submitModal');
+          this.submitExam();
+        };
+      }
+
+      const settingsBtn = document.getElementById('examSettingsBtn');
+      if (settingsBtn) {
+        settingsBtn.onclick = () => {
+          this.syncSettingsModalInputs();
+          this.openModal('settingsModal');
+        };
+      }
+
+      const closeSettings = document.getElementById('btnCloseSettings');
+      if (closeSettings) closeSettings.onclick = () => this.closeModal('settingsModal');
+
+      const saveSettings = document.getElementById('btnSaveSettings');
+      if (saveSettings) {
+        saveSettings.onclick = () => {
+          this.config.shuffleQuestions = document.getElementById('cfgShuffleQ')?.checked !== false;
+          this.config.shuffleOptions = document.getElementById('cfgShuffleO')?.checked !== false;
+          this.config.subject = document.getElementById('cfgExamSubject')?.value || 'all';
+          this.config.timerMinutes = parseInt(document.getElementById('cfgTimer')?.value || '60', 10);
+          StorageService.saveExamConfig(this.config);
+          this.closeModal('settingsModal');
+          this.startDefaultSubjectExam(this.config.subject);
+        };
+      }
+
+      const retakeBtn = document.getElementById('btnRetakeExam');
+      if (retakeBtn) {
+        retakeBtn.onclick = () => {
+          if (!this.activeExam) return;
+          this.startExam(
+            this.activeExam.sourceQuestions,
+            this.activeExam.title,
+            this.activeExam.feTestId,
+            this.activeExam.optionsCfg
+          );
+        };
+      }
+
+      const retryWrongBtn = document.getElementById('btnRetryWrongOnly');
+      if (retryWrongBtn) {
+        retryWrongBtn.onclick = () => {
+          if (!this.lastWrongQuestions || this.lastWrongQuestions.length === 0) return;
+          this.startExam(
+            this.lastWrongQuestions,
+            `Ôn lại ${this.lastWrongQuestions.length} câu làm sai`,
+            null,
+            { mode: 'practice', durationMinutes: 0, shuffleQuestions: true, shuffleOptions: true }
+          );
+        };
+      }
+
+      const reviewScrollBtn = document.getElementById('btnReviewAllAnswers');
+      if (reviewScrollBtn) {
+        reviewScrollBtn.onclick = () => {
+          const rev = document.getElementById('examReviewList');
+          if (rev) rev.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+      }
+    }
+
+    syncSettingsModalInputs() {
+      const sq = document.getElementById('cfgShuffleQ');
+      const so = document.getElementById('cfgShuffleO');
+      const sub = document.getElementById('cfgExamSubject');
+      const tm = document.getElementById('cfgTimer');
+      if (sq) sq.checked = this.config.shuffleQuestions !== false;
+      if (so) so.checked = this.config.shuffleOptions !== false;
+      if (sub) sub.value = this.config.subject || 'all';
+      if (tm) tm.value = String(this.config.timerMinutes ?? 60);
+    }
+
+    openModal(id) {
+      const m = document.getElementById(id);
+      if (m) m.classList.add('open');
+    }
+
+    closeModal(id) {
+      const m = document.getElementById(id);
+      if (m) m.classList.remove('open');
+    }
+
+    startDefaultSubjectExam(subjectKey = 'all') {
+      const pool = this.dataStore.getQuestionsBySubject(subjectKey);
+      const picked = Utils.shuffleArray(pool).slice(0, Math.min(50, pool.length));
+      const subName = SUBJECT_INFO[subjectKey]?.name || subjectKey;
+      this.startExam(picked, `Thi thử ${subName}`, null, {
+        mode: 'exam',
+        subjectKey,
+        durationMinutes: typeof this.config.timerMinutes === 'number' ? this.config.timerMinutes : 60,
+        shuffleQuestions: this.config.shuffleQuestions !== false,
+        shuffleOptions: this.config.shuffleOptions !== false
+      });
+    }
+
+    startExam(questionsList, title = 'Thi thử chuẩn EOS', feTestId = null, cfg = {}) {
+      if (!questionsList || questionsList.length === 0) {
+        alert('Không có câu hỏi để tạo đề thi.');
+        return;
+      }
+
+      this.stopTimer();
+
+      const shuffleQ = cfg.shuffleQuestions !== false;
+      const shuffleO = cfg.shuffleOptions !== false;
+      const mode = cfg.mode || 'exam';
+      const durationMinutes = typeof cfg.durationMinutes === 'number' ? cfg.durationMinutes : 60;
+
+      const workingQuestions = (shuffleQ ? Utils.shuffleArray(questionsList) : [...questionsList]).map((q) => {
+        const clonedOpts = q.options.map((o) => ({ ...o }));
+        return {
+          ...q,
+          displayOptions: shuffleO ? Utils.shuffleArray(clonedOpts) : clonedOpts
+        };
+      });
+
+      this.activeExam = {
+        title,
+        feTestId,
+        subjectKey: cfg.subjectKey || null,
+        mode,
+        optionsCfg: { ...cfg },
+        sourceQuestions: [...questionsList],
+        questions: workingQuestions,
+        currentIndex: 0,
+        userAnswers: {}, // qid -> chosen option object { key, text, isCorrect }
+        reviewFlags: new Set(),
+        revealedIds: new Set(),
+        durationSeconds: durationMinutes * 60,
+        remainingSeconds: durationMinutes * 60,
+        elapsedSeconds: 0,
+        isPaused: false,
+        submitted: false
+      };
+
+      const titleEl = document.getElementById('examCurrentTitle');
+      const sebNameEl = document.getElementById('sebExamName');
+      const durMeta = document.getElementById('examMetaDuration');
+      const subMeta = document.getElementById('examMetaSubject');
+      const countBadge = document.getElementById('examQuestionsCountBadge');
+
+      if (titleEl) titleEl.innerText = title;
+      if (sebNameEl) sebNameEl.innerText = `${title} (${mode === 'practice' ? 'Luyện tập' : 'FE Mode'})`;
+      if (durMeta) durMeta.innerText = durationMinutes > 0 ? `Thời gian: ${durationMinutes} phút` : 'Không giới hạn';
+      if (subMeta) subMeta.innerText = SUBJECT_INFO[cfg.subjectKey]?.code || 'Tùy chỉnh';
+      if (countBadge) countBadge.innerText = `${workingQuestions.length} Câu`;
+
+      this.app.switchMode('exam');
+      this.renderCurrentQuestion();
+      this.renderGrid();
+      this.startTimer();
+    }
+
+    startTimer() {
+      this.stopTimer();
+      this.updateTimerDisplays();
+      if (!this.activeExam) return;
+
+      this.timerInterval = setInterval(() => {
+        if (!this.activeExam || this.activeExam.isPaused || this.activeExam.submitted) return;
+        this.activeExam.elapsedSeconds++;
+        if (this.activeExam.durationSeconds > 0) {
+          this.activeExam.remainingSeconds--;
+          if (this.activeExam.remainingSeconds <= 0) {
+            this.activeExam.remainingSeconds = 0;
+            this.updateTimerDisplays();
+            this.submitExam();
+            return;
+          }
+        }
+        this.updateTimerDisplays();
+      }, 1000);
+    }
+
+    stopTimer() {
+      if (this.timerInterval) {
+        clearInterval(this.timerInterval);
+        this.timerInterval = null;
+      }
+    }
+
+    togglePause() {
+      if (!this.activeExam || this.activeExam.submitted) return;
+      this.activeExam.isPaused = !this.activeExam.isPaused;
+      const lbl = this.activeExam.isPaused ? 'Tiếp tục' : 'Tạm dừng';
+      ['timerPauseBtn', 'sebPauseBtn'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = lbl;
+      });
+    }
+
+    updateTimerDisplays() {
+      if (!this.activeExam) return;
+      const text = this.activeExam.durationSeconds > 0
+        ? Utils.formatTimeMmSs(this.activeExam.remainingSeconds)
+        : `∞ (${Utils.formatTimeMmSs(this.activeExam.elapsedSeconds)})`;
+
+      const d1 = document.getElementById('timerDisplay');
+      const d2 = document.getElementById('sebTimerDisplay');
+      if (d1) d1.innerText = text;
+      if (d2) d2.innerText = text;
+
+      const isUrgent = this.activeExam.durationSeconds > 0 && this.activeExam.remainingSeconds <= 300;
+      const b1 = document.getElementById('examTimerBadge');
+      const b2 = document.getElementById('sebTimerBadge');
+      if (b1) b1.className = `timer-badge ${isUrgent ? 'warning' : 'normal'}`;
+      if (b2) b2.classList.toggle('warning', isUrgent);
+    }
+
+    renderGrid() {
+      const grid = document.getElementById('examGrid');
+      if (!grid || !this.activeExam) return;
+      grid.innerHTML = '';
+
+      let answered = 0;
+      let review = 0;
+
+      this.activeExam.questions.forEach((q, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'q-grid-btn';
+        btn.innerText = idx + 1;
+
+        const isAns = Boolean(this.activeExam.userAnswers[q.id]);
+        const isRev = this.activeExam.reviewFlags.has(q.id);
+        const isAct = this.activeExam.currentIndex === idx;
+
+        if (isRev) {
+          btn.classList.add('review');
+          review++;
+        } else if (isAns) {
+          btn.classList.add('answered');
+          if (this.activeExam.mode === 'practice' && this.activeExam.revealedIds.has(q.id)) {
+            btn.classList.add(this.activeExam.userAnswers[q.id].isCorrect ? 'practice-correct' : 'practice-wrong');
+          }
+          answered++;
+        }
+
+        if (isAct) btn.classList.add('active');
+        btn.onclick = () => this.goToQuestion(idx);
+        grid.appendChild(btn);
+      });
+
+      const totalQ = this.activeExam.questions.length;
+      const curNum = this.activeExam.currentIndex + 1;
+      const pct = totalQ > 0 ? Math.round((answered / totalQ) * 100) : 0;
+
+      const sebText = document.getElementById('sebProgressText');
+      const sebFill = document.getElementById('sebProgressFill');
+      const globalFill = document.getElementById('globalProgressBar');
+      const palSub = document.getElementById('examPaletteSummary');
+
+      if (sebText) sebText.innerText = `Câu ${curNum} / ${totalQ} (${pct}% đã làm)`;
+      if (sebFill) sebFill.style.width = `${pct}%`;
+      if (globalFill) globalFill.style.width = `${pct}%`;
+      if (palSub) palSub.innerText = `Câu ${curNum}/${totalQ}`;
+
+      const cA = document.getElementById('countAnswered');
+      const cR = document.getElementById('countReview');
+      const cU = document.getElementById('countUnanswered');
+      if (cA) cA.innerText = answered;
+      if (cR) cR.innerText = review;
+      if (cU) cU.innerText = totalQ - answered;
+    }
+
+    goToQuestion(index) {
+      if (!this.activeExam || index < 0 || index >= this.activeExam.questions.length) return;
+      this.activeExam.currentIndex = index;
+      this.renderCurrentQuestion();
+      this.renderGrid();
+    }
+
+    prevQuestion() {
+      if (this.activeExam && this.activeExam.currentIndex > 0) {
+        this.goToQuestion(this.activeExam.currentIndex - 1);
+      }
+    }
+
+    nextQuestion() {
+      if (this.activeExam && this.activeExam.currentIndex < this.activeExam.questions.length - 1) {
+        this.goToQuestion(this.activeExam.currentIndex + 1);
+      }
+    }
+
+    toggleMarkReview() {
+      if (!this.activeExam) return;
+      const q = this.activeExam.questions[this.activeExam.currentIndex];
+      if (this.activeExam.reviewFlags.has(q.id)) {
+        this.activeExam.reviewFlags.delete(q.id);
+      } else {
+        this.activeExam.reviewFlags.add(q.id);
+      }
+      this.renderCurrentQuestion();
+      this.renderGrid();
+    }
+
+    clearCurrentAnswer() {
+      if (!this.activeExam) return;
+      const q = this.activeExam.questions[this.activeExam.currentIndex];
+      delete this.activeExam.userAnswers[q.id];
+      this.activeExam.revealedIds.delete(q.id);
+      this.renderCurrentQuestion();
+      this.renderGrid();
+    }
+
+    renderCurrentQuestion() {
+      if (!this.activeExam) return;
+      const q = this.activeExam.questions[this.activeExam.currentIndex];
+      const idx = this.activeExam.currentIndex;
+
+      const titleEl = document.getElementById('examQTitle');
+      const tagEl = document.getElementById('examQSubjectTag');
+      const textEl = document.getElementById('examQText');
+      const codeEl = document.getElementById('examQCodeContainer');
+      const imgEl = document.getElementById('examQImageContainer');
+      const optsEl = document.getElementById('examOptionsList');
+      const fbEl = document.getElementById('examInstantFeedback');
+
+      if (titleEl) titleEl.innerText = `${idx + 1}. ${q.topic || 'Question'}`;
+      if (tagEl) tagEl.innerText = `${q.subject} • 1 pt`;
+      if (textEl) textEl.innerHTML = Utils.formatQuestionText(q.questionText);
+      if (codeEl) codeEl.innerHTML = q.codeSnippet ? Utils.renderCodeTerminal(q.codeSnippet, q.subject) : '';
+
+      if (imgEl) {
+        const sHtml = Utils.renderSlidePreview(q, false);
+        imgEl.style.display = sHtml ? 'block' : 'none';
+        imgEl.innerHTML = sHtml;
+      }
+
+      const isPractice = this.activeExam.mode === 'practice';
+      const isRevealed = isPractice && this.activeExam.revealedIds.has(q.id);
+      const userAns = this.activeExam.userAnswers[q.id] || null;
+
+      if (optsEl) {
+        optsEl.innerHTML = '';
+        q.displayOptions.forEach((opt, optIdx) => {
+          const dispLetter = String.fromCharCode(65 + optIdx);
+          const isChecked = userAns && userAns.key === opt.key;
+
+          const label = document.createElement('label');
+          let cls = 'exam-option-label';
+          let badgeHtml = '';
+
+          if (isRevealed) {
+            if (opt.isCorrect) {
+              cls += ' practice-opt-correct';
+              badgeHtml = '<span class="practice-opt-badge correct">Đáp án đúng</span>';
+            } else if (isChecked) {
+              cls += ' practice-opt-wrong';
+              badgeHtml = '<span class="practice-opt-badge wrong">Chọn sai</span>';
+            }
+          }
+
+          label.className = cls;
+          label.innerHTML = `
+            <input type="radio" name="exam_opt_${q.id}" class="exam-option-input" value="${Utils.escapeHtml(opt.key)}" ${isChecked ? 'checked' : ''}>
+            <span class="option-indicator">${dispLetter}</span>
+            <div style="flex: 1;">
+              <div class="exam-option-text">${Utils.escapeHtml(opt.text)}</div>
+            </div>
+            ${badgeHtml}
+          `;
+
+          const input = label.querySelector('input');
+          if (input) {
+            input.onchange = () => {
+              this.activeExam.userAnswers[q.id] = opt;
+              if (isPractice) {
+                this.activeExam.revealedIds.add(q.id);
+                this.dataStore.markAttempted([q.id]);
+                this.dataStore.recordDailyActivity([q.id]);
+                if (opt.isCorrect) {
+                  this.dataStore.removeMistake(q.id);
+                } else {
+                  this.dataStore.addMistake(q.id);
+                }
+                this.app.updateBadges();
+                this.renderCurrentQuestion();
+              }
+              this.renderGrid();
+            };
+          }
+          optsEl.appendChild(label);
+        });
+      }
+
+      if (fbEl) {
+        if (isRevealed && userAns) {
+          const isOk = userAns.isCorrect;
+          const expHtml = q.explanation ? Utils.formatExplanation(q.explanation) : 'Đáp án đúng đã được đánh dấu trực tiếp ở trên.';
+          fbEl.style.display = 'block';
+          fbEl.innerHTML = `
+            <div class="instant-fb-banner ${isOk ? 'fb-correct' : 'fb-wrong'}">
+              <strong>${isOk ? 'Chính xác!' : 'Chưa chính xác'}</strong>
+              <span>• Giải thích chi tiết ngay sau câu trả lời</span>
+            </div>
+            <div class="explanation-box" style="margin-top: 8px;">
+              <div class="exp-text">${expHtml}</div>
+            </div>
+          `;
+        } else {
+          fbEl.style.display = 'none';
+          fbEl.innerHTML = '';
+        }
+      }
+
+      const markBtn = document.getElementById('btnMarkReview');
+      if (markBtn) {
+        const marked = this.activeExam.reviewFlags.has(q.id);
+        markBtn.classList.toggle('active', marked);
+        markBtn.innerText = marked ? 'Bỏ đánh dấu xem lại' : 'Đánh dấu xem lại';
+      }
+
+      const prevBtn = document.getElementById('btnPrevQuestion');
+      const nextBtn = document.getElementById('btnNextQuestion');
+      if (prevBtn) prevBtn.disabled = idx === 0;
+      if (nextBtn) {
+        nextBtn.innerText = idx >= this.activeExam.questions.length - 1 ? 'Kiểm tra & Nộp' : 'Câu tiếp theo';
+      }
+    }
+
+    openSubmitModal() {
+      if (!this.activeExam) return;
+      const total = this.activeExam.questions.length;
+      const answered = Object.keys(this.activeExam.userAnswers).length;
+      const unans = total - answered;
+      const msg = document.getElementById('submitModalSummary');
+      if (msg) {
+        msg.innerHTML = `Bạn đã trả lời <strong>${answered}/${total}</strong> câu hỏi.${
+          unans > 0 ? ` Còn <strong style="color: var(--correct-red);">${unans}</strong> câu chưa chọn đáp án.` : ' Tất cả câu hỏi đã được trả lời.'
+        }<br>Bạn có chắc chắn muốn nộp bài để chấm điểm không?`;
+      }
+      this.openModal('submitModal');
+    }
+
+    submitExam() {
+      if (!this.activeExam || this.activeExam.submitted) return;
+      this.activeExam.submitted = true;
+      this.stopTimer();
+
+      let correct = 0;
+      let wrong = 0;
+      let skipped = 0;
+      const wrongQuestions = [];
+      const wrongDetails = [];
+      const allIds = [];
+
+      this.activeExam.questions.forEach((q) => {
+        allIds.push(q.id);
+        const ans = this.activeExam.userAnswers[q.id];
+        if (!ans) {
+          skipped++;
+          wrongQuestions.push(q);
+          wrongDetails.push({ id: q.id, userText: null, correctText: q.options.find((o) => o.isCorrect)?.text || '' });
+        } else if (ans.isCorrect) {
+          correct++;
+          this.dataStore.removeMistake(q.id);
+        } else {
+          wrong++;
+          this.dataStore.addMistake(q.id);
+          wrongQuestions.push(q);
+          wrongDetails.push({ id: q.id, userText: ans.text, correctText: q.options.find((o) => o.isCorrect)?.text || '' });
+        }
+      });
+
+      this.lastWrongQuestions = wrongQuestions;
+      const total = this.activeExam.questions.length;
+      const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+      const scaledPts = total > 0 ? Math.round((correct / total) * 1000) : 0;
+
+      // Persist Telemetry
+      this.dataStore.markAttempted(allIds);
+      this.dataStore.recordDailyActivity(allIds, pct);
+      if (this.activeExam.subjectKey && this.activeExam.subjectKey !== 'all') {
+        this.dataStore.recordSubjectExamStat(this.activeExam.subjectKey, correct, total);
+      }
+
+      // If created via FE-Test, record turn history
+      if (this.activeExam.feTestId) {
+        const test = this.dataStore.feTests.find((t) => t.id === this.activeExam.feTestId);
+        if (test) {
+          test.completed = true;
+          test.scorePct = pct;
+          test.correctCount = correct;
+          test.lastDate = new Date().toLocaleDateString('vi-VN');
+          if (!Array.isArray(test.history)) test.history = [];
+          test.history.unshift({
+            turn: test.history.length + 1,
+            date: new Date().toLocaleString('vi-VN'),
+            scorePct: pct,
+            correctCount: correct,
+            totalCount: total,
+            wrongQuestions: wrongDetails
+          });
+          StorageService.saveFeTests(this.dataStore.feTests);
+        }
+      } else {
+        // Auto-save standalone Quick Exam into module/feTests history so Dashboard displays it
+        const subKey = this.activeExam.subjectKey && this.activeExam.subjectKey !== 'all'
+          ? this.activeExam.subjectKey
+          : null;
+        if (!subKey) {
+          this.dataStore.feTests.unshift({
+            id: `Quick_EOS_${Date.now()}`,
+            title: this.activeExam.title,
+            subject: 'all',
+            mode: this.activeExam.mode,
+            durationMinutes: Math.round(this.activeExam.durationSeconds / 60),
+            shuffle: true,
+            createdAt: new Date().toLocaleDateString('vi-VN'),
+            lastDate: new Date().toLocaleString('vi-VN'),
+            questionIds: allIds,
+            completed: true,
+            scorePct: pct,
+            correctCount: correct,
+            history: [{
+              turn: 1,
+              date: new Date().toLocaleString('vi-VN'),
+              scorePct: pct,
+              correctCount: correct,
+              totalCount: total,
+              wrongQuestions: wrongDetails
+            }]
+          });
+          StorageService.saveFeTests(this.dataStore.feTests);
+        }
+      }
+
+      this.app.updateBadges();
+      this.renderResults(correct, wrong, skipped, total, pct, scaledPts);
+    }
+
+    renderResults(correct, wrong, skipped, total, pct, scaledPts) {
+      this.app.switchMode('results');
+
+      const passed = scaledPts >= 750;
+      const setTxt = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = v;
+      };
+
+      setTxt('resultTitle', this.activeExam.title);
+      setTxt('scoreScaledPts', scaledPts);
+      setTxt('scorePercent', `${pct}%`);
+      setTxt('resCorrect', correct);
+      setTxt('resWrong', wrong);
+      setTxt('resSkipped', skipped);
+      setTxt('resTime', Utils.formatTimeMmSs(this.activeExam.elapsedSeconds));
+
+      document.querySelectorAll('.res-total-sub').forEach((el) => {
+        el.innerText = `/${total}`;
+      });
+
+      const badgeEl = document.getElementById('scoreBadge');
+      if (badgeEl) {
+        badgeEl.className = `cisco-pass-pill ${passed ? '' : 'failed'}`;
+        badgeEl.innerText = passed ? 'Đạt (Pass) • Chuẩn ≥ 750' : 'Chưa đạt • Cần ≥ 750';
+      }
+
+      const barEl = document.getElementById('scoreScaleBarFill');
+      if (barEl) {
+        barEl.style.width = `${pct}%`;
+        barEl.style.background = passed ? 'var(--exp-green)' : 'var(--correct-red)';
+      }
+
+      const retryWrongBtn = document.getElementById('btnRetryWrongOnly');
+      if (retryWrongBtn) {
+        retryWrongBtn.style.display = (wrong + skipped) > 0 ? 'inline-flex' : 'none';
+      }
+
+      // Render Full Detailed Review List
+      const reviewList = document.getElementById('examReviewList');
+      if (!reviewList) return;
+      reviewList.innerHTML = '';
+
+      this.activeExam.questions.forEach((q, idx) => {
+        const userAns = this.activeExam.userAnswers[q.id];
+        const isCorrect = Boolean(userAns && userAns.isCorrect);
+
+        const card = document.createElement('div');
+        card.className = 'study-card';
+
+        const statusTag = !userAns
+          ? '<span class="tag-badge" style="background: #fef3c7; color: #b45309;">Bỏ qua</span>'
+          : isCorrect
+          ? '<span class="tag-badge" style="background: #dcfce7; color: #15803d;">Đúng</span>'
+          : '<span class="tag-badge" style="background: #fee2e2; color: #b91c1c;">Sai</span>';
+
+        const optsHtml = q.displayOptions.map((opt, optIdx) => {
+          const letter = String.fromCharCode(65 + optIdx);
+          const isPicked = userAns && userAns.key === opt.key;
+          let cls = 'study-option';
+          let badge = '';
+
+          if (opt.isCorrect) {
+            cls += ' user-selected-correct';
+            badge = '<span class="study-option-badge badge-green">Đáp án đúng</span>';
+          } else if (isPicked) {
+            cls += ' user-selected-wrong';
+            badge = '<span class="study-option-badge badge-red">Bạn chọn</span>';
+          }
+
+          return `
+            <div class="${cls}">
+              <span class="option-indicator">${letter}</span>
+              <div style="flex: 1;">${Utils.escapeHtml(opt.text)}</div>
+              ${badge}
+            </div>
+          `;
+        }).join('');
+
+        const codeHtml = q.codeSnippet ? Utils.renderCodeTerminal(q.codeSnippet, q.subject) : '';
+        const expHtml = q.explanation
+          ? `<div class="explanation-box"><div class="exp-text"><strong>Giải thích:</strong> ${Utils.formatExplanation(q.explanation)}</div></div>`
+          : '';
+
+        card.innerHTML = `
+          <div class="study-card-header">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span class="study-qnum">Câu ${idx + 1}</span>
+              <span class="tag-badge">${Utils.escapeHtml(q.subject)}</span>
+              ${statusTag}
+            </div>
+            <span style="font-size: 12px; color: var(--text-muted);">${Utils.escapeHtml(q.id)}</span>
+          </div>
+          <div style="font-size: 15.5px; font-weight: 600; margin: 12px 0; line-height: 1.6;">
+            ${Utils.formatQuestionText(q.questionText)}
+          </div>
+          ${codeHtml}
+          <div class="study-options">${optsHtml}</div>
+          ${expHtml}
+        `;
+        reviewList.appendChild(card);
+      });
+    }
+  }
+
+  // =========================================================================
+  // 7. FE - TEST CUSTOM BUILDER CONTROLLER
+  // =========================================================================
+
+  class FeTestController {
+    constructor(dataStore, app) {
+      this.dataStore = dataStore;
+      this.app = app;
+      this.cfg = StorageService.getJson(STORAGE_KEYS.FE_CFG, {
+        subject: 'all',
+        mode: 'exam',
+        qCount: 50,
+        timerMinutes: 60,
+        mistakesOnly: false,
+        unansweredOnly: false,
+        starredOnly: false,
+        shuffle: true
+      });
+      this.modalWrongQuestions = [];
+    }
+
+    init() {
+      this.syncControlsFromCfg();
+      this.bindEvents();
+      this.render();
+    }
+
+    setSubject(sub) {
+      this.cfg.subject = sub || 'all';
+      const subSel = document.getElementById('feSubjectSelect');
+      if (subSel) subSel.value = this.cfg.subject;
+      this.updatePoolMeta();
+    }
+
+    syncControlsFromCfg() {
+      const subSel = document.getElementById('feSubjectSelect');
+      if (subSel) subSel.value = this.cfg.subject;
+
+      document.querySelectorAll('#feModeGroup .fetest-mode-card').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.femode === this.cfg.mode);
+      });
+
+      const slider = document.getElementById('feCountSlider');
+      const numInp = document.getElementById('feCountCustomInput');
+      if (slider) slider.value = this.cfg.qCount;
+      if (numInp) numInp.value = this.cfg.qCount;
+
+      const mChk = document.getElementById('feFilterMistakes');
+      const uChk = document.getElementById('feFilterUnanswered');
+      const sChk = document.getElementById('feFilterStarred');
+      const shChk = document.getElementById('feFilterShuffle');
+      if (mChk) mChk.checked = Boolean(this.cfg.mistakesOnly);
+      if (uChk) uChk.checked = Boolean(this.cfg.unansweredOnly);
+      if (sChk) sChk.checked = Boolean(this.cfg.starredOnly);
+      if (shChk) shChk.checked = this.cfg.shuffle !== false;
+    }
+
+    bindEvents() {
+      const subSel = document.getElementById('feSubjectSelect');
+      if (subSel) {
+        subSel.onchange = () => {
+          this.cfg.subject = subSel.value;
+          StorageService.setJson(STORAGE_KEYS.FE_CFG, this.cfg);
+          this.updatePoolMeta();
+        };
+      }
+
+      document.querySelectorAll('#feModeGroup .fetest-mode-card').forEach((btn) => {
+        btn.onclick = () => {
+          this.cfg.mode = btn.dataset.femode;
+          document.querySelectorAll('#feModeGroup .fetest-mode-card').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          const sum = document.getElementById('feModeSummaryText');
+          if (sum) sum.innerText = this.cfg.mode === 'practice' ? 'Luyện tập' : 'FE';
+          StorageService.setJson(STORAGE_KEYS.FE_CFG, this.cfg);
+        };
+      });
+
+      const slider = document.getElementById('feCountSlider');
+      const numInp = document.getElementById('feCountCustomInput');
+      const countSummary = document.getElementById('feCountSummaryText');
+
+      const updateCountVal = (val) => {
+        const poolLen = Math.max(1, this.getFilteredPool().length);
+        const clamped = Math.max(1, Math.min(val, poolLen));
+        this.cfg.qCount = clamped;
+        if (slider) slider.value = clamped;
+        if (numInp) numInp.value = clamped;
+        if (countSummary) countSummary.innerText = `${clamped} câu`;
+        StorageService.setJson(STORAGE_KEYS.FE_CFG, this.cfg);
+      };
+
+      document.querySelectorAll('#feCountBtnGroup .fetest-seg-btn').forEach((btn) => {
+        btn.onclick = () => {
+          document.querySelectorAll('#feCountBtnGroup .fetest-seg-btn').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (btn.dataset.qcount !== 'custom') {
+            updateCountVal(parseInt(btn.dataset.qcount, 10));
+          } else if (numInp) {
+            numInp.focus();
+          }
+        };
+      });
+
+      if (slider) slider.oninput = () => updateCountVal(parseInt(slider.value, 10) || 50);
+      if (numInp) numInp.onchange = () => updateCountVal(parseInt(numInp.value, 10) || 50);
+
+      const customTimerWrap = document.getElementById('feCustomTimerWrap');
+      const customTimerInp = document.getElementById('feTimerCustomInput');
+      const timerSummary = document.getElementById('feTimerSummaryText');
+
+      document.querySelectorAll('#feTimerBtnGroup .fetest-seg-btn').forEach((btn) => {
+        btn.onclick = () => {
+          document.querySelectorAll('#feTimerBtnGroup .fetest-seg-btn').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (btn.dataset.timer === 'custom') {
+            if (customTimerWrap) customTimerWrap.style.display = 'flex';
+            const mins = parseInt(customTimerInp?.value || '45', 10) || 45;
+            this.cfg.timerMinutes = mins;
+            if (timerSummary) timerSummary.innerText = `${mins} phút`;
+          } else {
+            if (customTimerWrap) customTimerWrap.style.display = 'none';
+            const mins = parseInt(btn.dataset.timer, 10);
+            this.cfg.timerMinutes = mins;
+            if (timerSummary) timerSummary.innerText = mins === 0 ? 'Không giới hạn' : `${mins} phút`;
+          }
+          StorageService.setJson(STORAGE_KEYS.FE_CFG, this.cfg);
+        };
+      });
+
+      if (customTimerInp) {
+        customTimerInp.onchange = () => {
+          const mins = Math.max(1, parseInt(customTimerInp.value, 10) || 45);
+          this.cfg.timerMinutes = mins;
+          if (timerSummary) timerSummary.innerText = `${mins} phút`;
+          StorageService.setJson(STORAGE_KEYS.FE_CFG, this.cfg);
+        };
+      }
+
+      ['feFilterMistakes', 'feFilterUnanswered', 'feFilterStarred', 'feFilterShuffle'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.onchange = () => {
+          this.cfg.mistakesOnly = document.getElementById('feFilterMistakes')?.checked || false;
+          this.cfg.unansweredOnly = document.getElementById('feFilterUnanswered')?.checked || false;
+          this.cfg.starredOnly = document.getElementById('feFilterStarred')?.checked || false;
+          this.cfg.shuffle = document.getElementById('feFilterShuffle')?.checked !== false;
+          StorageService.setJson(STORAGE_KEYS.FE_CFG, this.cfg);
+          this.updatePoolMeta();
+        };
+      });
+
+      const createBtn = document.getElementById('btnCreateFeTest');
+      if (createBtn) createBtn.onclick = () => this.createTest();
+
+      const clearBtn = document.getElementById('btnClearFeTests');
+      if (clearBtn) {
+        clearBtn.onclick = () => {
+          if (confirm('Xóa toàn bộ lịch sử đề FE-Test đã tạo?')) {
+            this.dataStore.feTests = [];
+            StorageService.saveFeTests([]);
+            this.render();
+          }
+        };
+      }
+
+      // Mistakes Modal actions
+      ['btnCloseTestMistakesModal', 'btnCloseTestMistakesFooter'].forEach((id) => {
+        const b = document.getElementById(id);
+        if (b) b.onclick = () => document.getElementById('testMistakesModal')?.classList.remove('open');
+      });
+
+      const retryModalBtn = document.getElementById('btnRetrySpecificTestMistakes');
+      if (retryModalBtn) {
+        retryModalBtn.onclick = () => {
+          if (this.modalWrongQuestions.length === 0) return;
+          document.getElementById('testMistakesModal')?.classList.remove('open');
+          this.app.examController.startExam(
+            this.modalWrongQuestions,
+            `Luyện lại ${this.modalWrongQuestions.length} câu sai`,
+            null,
+            { mode: 'practice', durationMinutes: 0, shuffleQuestions: true, shuffleOptions: true }
+          );
+        };
+      }
+    }
+
+    getFilteredPool() {
+      let pool = this.dataStore.getQuestionsBySubject(this.cfg.subject);
+      if (this.cfg.mistakesOnly) {
+        pool = pool.filter((q) => this.dataStore.mistakesIds.has(q.id));
+      }
+      if (this.cfg.unansweredOnly) {
+        pool = pool.filter((q) => !this.dataStore.attemptedIds.has(q.id));
+      }
+      if (this.cfg.starredOnly) {
+        pool = pool.filter((q) => this.dataStore.starredIds.has(q.id));
+      }
+      return pool;
+    }
+
+    updatePoolMeta() {
+      const basePool = this.dataStore.getQuestionsBySubject(this.cfg.subject);
+      const filteredPool = this.getFilteredPool();
+      const setTxt = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = v;
+      };
+
+      const mCnt = basePool.filter((q) => this.dataStore.mistakesIds.has(q.id)).length;
+      const uCnt = basePool.filter((q) => !this.dataStore.attemptedIds.has(q.id)).length;
+      const sCnt = basePool.filter((q) => this.dataStore.starredIds.has(q.id)).length;
+
+      setTxt('feSubjectSummaryText', SUBJECT_INFO[this.cfg.subject]?.code || 'ALL');
+      setTxt('feFilterMistakesCount', mCnt);
+      setTxt('feFilterUnansweredCount', uCnt);
+      setTxt('feFilterStarredCount', sCnt);
+      setTxt('fePoolAvailableCount', `Khả dụng: ${filteredPool.length} câu`);
+
+      const slider = document.getElementById('feCountSlider');
+      const numInp = document.getElementById('feCountCustomInput');
+      const maxPool = Math.max(1, filteredPool.length);
+      if (slider) {
+        slider.max = maxPool;
+        if (this.cfg.qCount > maxPool) {
+          this.cfg.qCount = maxPool;
+          slider.value = maxPool;
+        }
+      }
+      if (numInp) {
+        numInp.max = maxPool;
+        if (Number(numInp.value) > maxPool) numInp.value = maxPool;
+      }
+      setTxt('feCountSummaryText', `${Math.min(this.cfg.qCount, maxPool)} câu`);
+    }
+
+    createTest() {
+      const candidates = this.getFilteredPool();
+      if (candidates.length === 0) {
+        alert('Không có câu hỏi nào khớp với bộ lọc hiện tại. Hãy nới lỏng điều kiện lọc.');
+        return;
+      }
+
+      let maxNum = 0;
+      this.dataStore.feTests.forEach((t) => {
+        const m = t.id && t.id.match(/^FE_Test_(\d+)$/i);
+        if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10) || 0);
+      });
+      const numStr = String(maxNum + 1).padStart(2, '0');
+      const testId = `FE_Test_${numStr}`;
+      const subCode = SUBJECT_INFO[this.cfg.subject]?.code || 'ALL';
+      const modeTag = this.cfg.mode === 'practice' ? 'Practice' : 'FE';
+      const countToTake = Math.min(this.cfg.qCount || 50, candidates.length);
+      const pool = this.cfg.shuffle ? Utils.shuffleArray(candidates) : [...candidates];
+      const selected = pool.slice(0, countToTake);
+
+      const newTest = {
+        id: testId,
+        title: `FE_Test_${numStr} (${subCode} • ${modeTag} • ${selected.length}Q)`,
+        subject: this.cfg.subject,
+        mode: this.cfg.mode,
+        durationMinutes: this.cfg.timerMinutes,
+        shuffle: this.cfg.shuffle,
+        createdAt: new Date().toLocaleDateString('vi-VN'),
+        questionIds: selected.map((q) => q.id),
+        completed: false,
+        scorePct: 0,
+        correctCount: 0,
+        history: []
+      };
+
+      this.dataStore.feTests.unshift(newTest);
+      StorageService.saveFeTests(this.dataStore.feTests);
+      this.render();
+      this.startTest(testId);
+    }
+
+    startTest(testId) {
+      const test = this.dataStore.feTests.find((t) => t.id === testId);
+      if (!test) return;
+      const questions = test.questionIds.map((id) => this.dataStore.getQuestion(id)).filter(Boolean);
+      if (questions.length === 0) {
+        alert('Đề lịch sử cũ không còn danh sách ID câu hỏi chi tiết để làm lại.');
+        return;
+      }
+      this.app.examController.startExam(questions, test.title, test.id, {
+        mode: test.mode || 'exam',
+        subjectKey: test.subject || 'all',
+        durationMinutes: typeof test.durationMinutes === 'number' ? test.durationMinutes : 60,
+        shuffleQuestions: test.shuffle !== false,
+        shuffleOptions: test.shuffle !== false
+      });
+    }
+
+    openMistakesModal(testId, turnNum = null) {
+      const test = this.dataStore.feTests.find((t) => t.id === testId);
+      if (!test) return;
+      const attempt = turnNum
+        ? (test.history || []).find((h) => h.turn === turnNum)
+        : (test.history && test.history[0]);
+
+      const wrongDetails = attempt?.wrongQuestions || [];
+      this.modalWrongQuestions = wrongDetails
+        .map((w) => this.dataStore.getQuestion(w.id || w))
+        .filter(Boolean);
+
+      const titleEl = document.getElementById('testMistakesModalTitle');
+      const subEl = document.getElementById('testMistakesModalSubtitle');
+      const bodyEl = document.getElementById('testMistakesModalBody');
+
+      if (titleEl) titleEl.innerHTML = `<span>Xem câu sai • ${Utils.escapeHtml(test.title)}</span>`;
+      if (subEl) {
+        subEl.innerText = attempt
+          ? `Lần ${attempt.turn} (${attempt.date}) • Đúng ${attempt.correctCount}/${attempt.totalCount} (${attempt.scorePct}%)`
+          : 'Danh sách câu sai';
+      }
+
+      if (bodyEl) {
+        if (this.modalWrongQuestions.length === 0) {
+          bodyEl.innerHTML = '<p style="text-align:center; color: var(--text-muted); padding: 2rem;">Không có câu sai nào trong lần thi này!</p>';
+        } else {
+          bodyEl.innerHTML = this.modalWrongQuestions.map((q, idx) => {
+            const det = wrongDetails[idx] || {};
+            const correctOpt = q.options.find((o) => o.isCorrect);
             return `
-              <div class="bg-slate-900/80 border rounded-2xl p-5 space-y-3 ${ok ? 'border-emerald-500/30' : 'border-rose-500/30'}">
-                <div class="flex items-center justify-between text-xs">
-                  <span class="font-mono font-bold text-slate-300">Câu ${i + 1} (${escapeHtml(q.id)})</span>
-                  <span class="font-bold ${ok ? 'text-emerald-400' : 'text-rose-400'}">
-                    ${ok ? '✓ Đúng' : `✗ Sai (Bạn chọn: ${picked || 'Bỏ trống'} | Đáp án: ${escapeHtml(q.correctAnswer)})`}
-                  </span>
+              <div class="study-card" style="margin-bottom: 14px;">
+                <div class="study-card-header">
+                  <div>
+                    <span class="study-qnum">Câu ${idx + 1}</span>
+                    <span class="tag-badge">${Utils.escapeHtml(q.subject)}</span>
+                  </div>
+                  <span style="font-size: 12px; color: var(--text-muted);">${Utils.escapeHtml(q.id)}</span>
                 </div>
-                <p class="text-sm text-white whitespace-pre-wrap">${escapeHtml(q.questionText)}</p>
-                <div class="text-xs text-slate-300 bg-slate-950 border border-slate-800 rounded-xl p-3 whitespace-pre-wrap">
-                  <strong class="text-emerald-400">Giải thích:</strong> ${escapeHtml(q.explanation || 'Không có')}
-                </div>
+                <div style="font-weight: 600; margin: 8px 0;">${Utils.formatQuestionText(q.questionText)}</div>
+                ${det.userText ? `<div style="color: var(--correct-red); font-size: 13.5px; margin-bottom: 4px;">✗ Bạn chọn: ${Utils.escapeHtml(det.userText)}</div>` : '<div style="color: #b45309; font-size: 13.5px; margin-bottom: 4px;">• Bỏ qua chưa chọn</div>'}
+                <div style="color: var(--exp-green); font-size: 13.5px; font-weight: 600;">✓ Đáp án đúng: ${Utils.escapeHtml(correctOpt ? `${correctOpt.key}. ${correctOpt.text}` : det.correctText || '')}</div>
+                ${q.explanation ? `<div class="explanation-box" style="margin-top: 8px;"><div class="exp-text">${Utils.formatExplanation(q.explanation)}</div></div>` : ''}
               </div>
             `;
-          }).join('')}
+          }).join('');
+        }
+      }
+
+      const retryBtn = document.getElementById('btnRetrySpecificTestMistakes');
+      if (retryBtn) retryBtn.style.display = this.modalWrongQuestions.length > 0 ? 'inline-flex' : 'none';
+
+      document.getElementById('testMistakesModal')?.classList.add('open');
+    }
+
+    render() {
+      this.updatePoolMeta();
+
+      const totalEl = document.getElementById('feTestTotalCreated');
+      const compEl = document.getElementById('feTestCompletedCount');
+      const highEl = document.getElementById('feTestHighestScore');
+      const listEl = document.getElementById('feTestListContainer');
+
+      const tests = this.dataStore.feTests;
+      const completed = tests.filter((t) => t.completed);
+      const bestPct = completed.length > 0 ? Math.max(...completed.map((t) => t.scorePct || 0)) : null;
+
+      if (totalEl) totalEl.innerText = tests.length;
+      if (compEl) compEl.innerText = completed.length;
+      if (highEl) highEl.innerText = bestPct !== null ? `${bestPct * 10}` : '--';
+
+      if (!listEl) return;
+      listEl.innerHTML = '';
+
+      if (tests.length === 0) {
+        listEl.innerHTML = `
+          <div class="study-card" style="text-align: center; padding: 2rem;">
+            <p style="color: var(--text-muted);">Chưa có đề thi tùy chỉnh nào. Hãy cấu hình bên trái và nhấn <strong>Tạo &amp; bắt đầu làm đề</strong>.</p>
+          </div>
+        `;
+        return;
+      }
+
+      tests.forEach((test) => {
+        const card = document.createElement('div');
+        card.className = 'fe-test-card';
+
+        const historyItems = Array.isArray(test.history) ? test.history : [];
+        const hasHist = historyItems.length > 0 || test.completed;
+        const latest = historyItems[0] || null;
+        const totalQ = latest?.totalCount || test.questionIds?.length || 50;
+        const curPct = latest ? latest.scorePct : (test.scorePct || 0);
+        const curCorrect = latest ? latest.correctCount : (test.correctCount || 0);
+        const isPassed = curPct >= 75;
+        const wrongNum = latest?.wrongQuestions ? latest.wrongQuestions.length : Math.max(0, totalQ - curCorrect);
+
+        const histRows = historyItems.map((h) => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--border-color); font-size: 13px;">
+            <span><strong>Lần ${h.turn}</strong> • ${Utils.escapeHtml(h.date)}</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <strong style="color: ${h.scorePct >= 75 ? 'var(--exp-green)' : 'var(--correct-red)'};">${h.scorePct}% (${h.correctCount}/${h.totalCount})</strong>
+              ${h.wrongQuestions && h.wrongQuestions.length > 0 ? `<button type="button" class="btn btn-outline btn-xs btn-view-turn-mistakes" data-turn="${h.turn}">Xem sai (${h.wrongQuestions.length})</button>` : ''}
+            </div>
+          </div>
+        `).join('');
+
+        card.innerHTML = `
+          <div class="fetest-card-top">
+            <div>
+              <div class="fetest-card-title">${Utils.escapeHtml(test.title)}</div>
+              <div class="fetest-card-meta">
+                <span>Số câu: <strong>${totalQ}</strong></span>
+                <span>•</span>
+                <span>Thời gian: <strong>${test.durationMinutes === 0 ? 'Không giới hạn' : `${test.durationMinutes || 60}p`}</strong></span>
+                ${hasHist ? `<span>•</span><span style="color: var(--primary); font-weight: 600;">${historyItems.length || 1} lượt</span>` : ''}
+              </div>
+            </div>
+            <div class="fetest-actions">
+              ${hasHist
+                ? `<span class="tag-badge" style="background: ${isPassed ? '#dcfce7' : '#fee2e2'}; color: ${isPassed ? '#15803d' : '#b91c1c'};">${isPassed ? 'Đạt' : 'Chưa đạt'}: ${curPct}%</span>`
+                : '<span class="tag-badge" style="background: #fef3c7; color: #b45309;">Chưa làm</span>'}
+              ${test.questionIds && test.questionIds.length > 0 ? `<button type="button" class="btn btn-primary btn-sm btn-start-fetest">${hasHist ? 'Làm lại' : 'Làm bài'}</button>` : ''}
+              ${hasHist ? `<button type="button" class="btn btn-outline btn-sm btn-toggle-history">Lịch sử (${historyItems.length || 1}) ▾</button>` : ''}
+              ${hasHist && wrongNum > 0 && latest?.wrongQuestions?.length > 0 ? `<button type="button" class="btn btn-warning btn-sm btn-view-latest-mistakes">Xem câu sai (${wrongNum})</button>` : ''}
+              <button type="button" class="btn btn-outline btn-sm btn-delete-fetest">Xóa</button>
+            </div>
+          </div>
+          <div class="fetest-history-dropdown" style="display: none; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border-color);">
+            ${histRows || '<div style="font-size: 12.5px; color: var(--text-muted);">Chưa có lượt thi chi tiết.</div>'}
+          </div>
+        `;
+
+        const startBtn = card.querySelector('.btn-start-fetest');
+        if (startBtn) startBtn.onclick = () => this.startTest(test.id);
+
+        const delBtn = card.querySelector('.btn-delete-fetest');
+        if (delBtn) {
+          delBtn.onclick = () => {
+            this.dataStore.feTests = this.dataStore.feTests.filter((t) => t.id !== test.id);
+            StorageService.saveFeTests(this.dataStore.feTests);
+            this.render();
+          };
+        }
+
+        const histBtn = card.querySelector('.btn-toggle-history');
+        const histDrop = card.querySelector('.fetest-history-dropdown');
+        if (histBtn && histDrop) {
+          histBtn.onclick = () => {
+            const open = histDrop.style.display === 'none';
+            histDrop.style.display = open ? 'block' : 'none';
+          };
+        }
+
+        const latestErrBtn = card.querySelector('.btn-view-latest-mistakes');
+        if (latestErrBtn) {
+          latestErrBtn.onclick = () => this.openMistakesModal(test.id, latest?.turn || null);
+        }
+
+        card.querySelectorAll('.btn-view-turn-mistakes').forEach((b) => {
+          b.onclick = () => this.openMistakesModal(test.id, parseInt(b.dataset.turn, 10));
+        });
+
+        listEl.appendChild(card);
+      });
+    }
+  }
+
+  // =========================================================================
+  // 8. FLASHCARDS CONTROLLER
+  // =========================================================================
+
+  class FlashcardsController {
+    constructor(dataStore, app) {
+      this.dataStore = dataStore;
+      this.app = app;
+      this.subject = 'all';
+      this.topic = 'ALL';
+      this.mistakesOnly = false;
+      this.shuffled = false;
+      this.deck = [];
+      this.index = 0;
+      this.flipped = false;
+    }
+
+    init() {
+      this.populateTopicSelect();
+      this.bindEvents();
+      this.rebuildDeck();
+    }
+
+    setSubject(sub) {
+      this.subject = sub || 'all';
+      this.topic = 'ALL';
+      const subSel = document.getElementById('fcSubjectSelect');
+      if (subSel) subSel.value = this.subject;
+      this.populateTopicSelect();
+      this.rebuildDeck();
+    }
+
+    populateTopicSelect() {
+      const sel = document.getElementById('fcTopicSelect');
+      if (!sel) return;
+      const topics = this.dataStore.getTopics(this.subject);
+      sel.innerHTML = `<option value="ALL">Tất cả chủ đề (${topics.length})</option>` +
+        topics.map((t) => `<option value="${Utils.escapeHtml(t)}">${Utils.escapeHtml(t)}</option>`).join('');
+      sel.value = this.topic;
+    }
+
+    bindEvents() {
+      const subSel = document.getElementById('fcSubjectSelect');
+      if (subSel) {
+        subSel.onchange = () => {
+          this.subject = subSel.value;
+          this.topic = 'ALL';
+          this.populateTopicSelect();
+          this.rebuildDeck();
+        };
+      }
+
+      const topSel = document.getElementById('fcTopicSelect');
+      if (topSel) {
+        topSel.onchange = () => {
+          this.topic = topSel.value;
+          this.rebuildDeck();
+        };
+      }
+
+      const shufBtn = document.getElementById('fcShuffleBtn');
+      if (shufBtn) {
+        shufBtn.onclick = () => {
+          this.shuffled = !this.shuffled;
+          shufBtn.classList.toggle('active', this.shuffled);
+          this.rebuildDeck();
+        };
+      }
+
+      const misBtn = document.getElementById('fcMistakesOnlyBtn');
+      if (misBtn) {
+        misBtn.onclick = () => {
+          this.mistakesOnly = !this.mistakesOnly;
+          misBtn.classList.toggle('active', this.mistakesOnly);
+          this.rebuildDeck();
+        };
+      }
+
+      const prev = document.getElementById('fcPrevBtn');
+      const next = document.getElementById('fcNextBtn');
+      const flip = document.getElementById('fcFlipBtn');
+      const needRev = document.getElementById('fcNeedReviewBtn');
+      const mastered = document.getElementById('fcMasteredBtn');
+
+      if (prev) prev.onclick = () => this.prev();
+      if (next) next.onclick = () => this.next();
+      if (flip) flip.onclick = () => this.toggleFlip();
+      if (needRev) {
+        needRev.onclick = () => {
+          const cur = this.deck[this.index];
+          if (!cur) return;
+          this.dataStore.addMistake(cur.id);
+          this.dataStore.markAttempted([cur.id]);
+          this.dataStore.recordDailyActivity([cur.id]);
+          this.app.updateBadges();
+          this.next();
+        };
+      }
+      if (mastered) {
+        mastered.onclick = () => {
+          const cur = this.deck[this.index];
+          if (!cur) return;
+          this.dataStore.removeMistake(cur.id);
+          this.dataStore.markAttempted([cur.id]);
+          this.dataStore.recordDailyActivity([cur.id]);
+          this.app.updateBadges();
+          this.next();
+        };
+      }
+
+      window.addEventListener('keydown', (e) => {
+        if (this.app.activeMode !== 'flashcards') return;
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+        if (e.code === 'Space') {
+          e.preventDefault();
+          this.toggleFlip();
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          this.next();
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          this.prev();
+        }
+      });
+    }
+
+    rebuildDeck() {
+      let pool = this.dataStore.getQuestionsBySubject(this.subject);
+      if (this.topic && this.topic !== 'ALL') {
+        pool = pool.filter((q) => q.topic === this.topic);
+      }
+      if (this.mistakesOnly) {
+        pool = pool.filter((q) => this.dataStore.mistakesIds.has(q.id));
+      }
+      this.deck = this.shuffled ? Utils.shuffleArray(pool) : [...pool];
+      this.index = 0;
+      this.flipped = false;
+      this.render();
+    }
+
+    toggleFlip() {
+      if (this.deck.length === 0) return;
+      this.flipped = !this.flipped;
+      this.render();
+    }
+
+    prev() {
+      if (this.deck.length === 0) return;
+      this.index = (this.index - 1 + this.deck.length) % this.deck.length;
+      this.flipped = false;
+      this.render();
+    }
+
+    next() {
+      if (this.deck.length === 0) return;
+      this.index = (this.index + 1) % this.deck.length;
+      this.flipped = false;
+      this.render();
+    }
+
+    render() {
+      const host = document.getElementById('fcCardHost');
+      const counter = document.getElementById('fcCounterLabel');
+      const fill = document.getElementById('fcProgressFill');
+
+      if (!host) return;
+      if (this.deck.length === 0) {
+        if (counter) counter.innerText = 'Thẻ 0 / 0';
+        if (fill) fill.style.width = '0%';
+        host.innerHTML = `
+          <div class="study-card" style="text-align: center; padding: 3rem 1.5rem;">
+            <p style="color: var(--text-muted);">Không có thẻ nào khớp với bộ lọc hiện tại.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const q = this.deck[this.index];
+      const total = this.deck.length;
+      const pct = Math.round(((this.index + 1) / total) * 100);
+      if (counter) counter.innerText = `Thẻ ${this.index + 1} / ${total}`;
+      if (fill) fill.style.width = `${pct}%`;
+
+      const isStarred = this.dataStore.starredIds.has(q.id);
+      const diffMeta = Utils.getDifficultyMeta(q.difficulty);
+      const correctOpt = q.options.find((o) => o.isCorrect);
+
+      const optsHtml = q.options.map((opt) => {
+        const cls = this.flipped && opt.isCorrect ? 'fc-opt-chip fc-opt-correct' : 'fc-opt-chip';
+        return `<div class="${cls}"><strong>${Utils.escapeHtml(opt.key)}.</strong> <span>${Utils.escapeHtml(opt.text)}</span></div>`;
+      }).join('');
+
+      const answerSection = this.flipped ? `
+        <div class="explanation-box" style="margin-top: 8px;">
+          <div style="font-weight: 700; color: var(--exp-green); margin-bottom: 6px;">
+            Đáp án đúng: ${Utils.escapeHtml(correctOpt ? `${correctOpt.key}. ${correctOpt.text}` : q.correctAnswer)}
+          </div>
+          <div class="exp-text">
+            ${q.explanation ? Utils.formatExplanation(q.explanation) : 'Chưa có giải thích bổ sung.'}
+          </div>
         </div>
-      </div>
-    `;
-  }
+      ` : '';
 
-  function render() {
-    updateNavbar();
-    const root = document.getElementById('app-root');
-    const route = getCurrentRoute();
-    if (route === '/study') root.innerHTML = renderStudy();
-    else if (route === '/flashcards') root.innerHTML = renderFlashcards();
-    else if (route === '/questions') root.innerHTML = renderQuestionBank();
-    else if (route === '/exam') root.innerHTML = renderExam();
-    else root.innerHTML = renderDashboard();
-
-    if (window.lucide) window.lucide.createIcons();
-    attachDynamicEvents();
-  }
-
-  function attachDynamicEvents() {
-    const studySub = document.getElementById('study-subject');
-    if (studySub) studySub.onchange = e => { state.study.subject = e.target.value; state.study.topic = 'ALL'; state.study.index = 0; state.study.selectedOption = null; state.study.showExplanation = false; render(); };
-    const studyTopic = document.getElementById('study-topic');
-    if (studyTopic) studyTopic.onchange = e => { state.study.topic = e.target.value; state.study.index = 0; state.study.selectedOption = null; state.study.showExplanation = false; render(); };
-    const studyDiff = document.getElementById('study-difficulty');
-    if (studyDiff) studyDiff.onchange = e => { state.study.difficulty = e.target.value; state.study.index = 0; state.study.selectedOption = null; render(); };
-    const studyBm = document.getElementById('study-bookmarked');
-    if (studyBm) studyBm.onchange = e => { state.study.onlyBookmarked = e.target.checked; state.study.index = 0; state.study.selectedOption = null; render(); };
-
-    const fcSub = document.getElementById('fc-subject');
-    if (fcSub) fcSub.onchange = e => { state.flashcards.subject = e.target.value; state.flashcards.topic = 'ALL'; state.flashcards.index = 0; state.flashcards.flipped = false; state.flashcards.shuffledOrder = null; render(); };
-    const fcTopic = document.getElementById('fc-topic');
-    if (fcTopic) fcTopic.onchange = e => { state.flashcards.topic = e.target.value; state.flashcards.index = 0; state.flashcards.flipped = false; state.flashcards.shuffledOrder = null; render(); };
-
-    const bankSearch = document.getElementById('bank-search');
-    if (bankSearch) {
-      bankSearch.oninput = e => {
-        state.bank.query = e.target.value;
-        state.bank.page = 1;
-        render();
-        const el = document.getElementById('bank-search');
-        if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
-      };
-    }
-    const bankSub = document.getElementById('bank-subject');
-    if (bankSub) bankSub.onchange = e => { state.bank.subject = e.target.value; state.bank.topic = 'ALL'; state.bank.page = 1; render(); };
-    const bankTopic = document.getElementById('bank-topic');
-    if (bankTopic) bankTopic.onchange = e => { state.bank.topic = e.target.value; state.bank.page = 1; render(); };
-    const bankDiff = document.getElementById('bank-difficulty');
-    if (bankDiff) bankDiff.onchange = e => { state.bank.difficulty = e.target.value; state.bank.page = 1; render(); };
-    const bankStatus = document.getElementById('bank-status');
-    if (bankStatus) bankStatus.onchange = e => { state.bank.filterStatus = e.target.value; state.bank.page = 1; render(); };
-
-    const exSub = document.getElementById('exam-subject');
-    if (exSub) exSub.onchange = e => { state.exam.subject = e.target.value; };
-    const exCount = document.getElementById('exam-count');
-    if (exCount) exCount.onchange = e => { state.exam.count = Number(e.target.value); };
-    const exMin = document.getElementById('exam-minutes');
-    if (exMin) exMin.onchange = e => { state.exam.minutes = Number(e.target.value); };
-  }
-
-  document.addEventListener('click', e => {
-    const routeEl = e.target.closest('[data-route]');
-    if (routeEl) {
-      e.preventDefault();
-      navigate(routeEl.getAttribute('data-route'));
-      return;
-    }
-
-    const actionEl = e.target.closest('[data-action]');
-    if (!actionEl) return;
-    const action = actionEl.getAttribute('data-action');
-
-    if (action === 'select-subject') {
-      state.selectedSubject = actionEl.getAttribute('data-subject');
-      render();
-    } else if (action === 'bookmark') {
-      toggleBookmark(actionEl.getAttribute('data-id'));
-    } else if (action === 'study-pick') {
-      const list = getStudyQuestions();
-      const q = list[state.study.index];
-      const key = actionEl.getAttribute('data-key');
-      state.study.selectedOption = key;
-      state.study.showExplanation = true;
-      if (q) setMastery(q.id, key === q.correctAnswer ? 'mastered' : 'review_needed', key === q.correctAnswer);
-      render();
-    } else if (action === 'study-prev') {
-      if (state.study.index > 0) {
-        state.study.index--;
-        state.study.selectedOption = null;
-        state.study.showExplanation = false;
-        render();
-      }
-    } else if (action === 'study-next') {
-      const list = getStudyQuestions();
-      if (state.study.index < list.length - 1) {
-        state.study.index++;
-        state.study.selectedOption = null;
-        state.study.showExplanation = false;
-        render();
-      }
-    } else if (action === 'study-toggle-exp') {
-      state.study.showExplanation = !state.study.showExplanation;
-      render();
-    } else if (action === 'toggle-slide-panel') {
-      state.study.showSlidePanel = !state.study.showSlidePanel;
-      render();
-    } else if (action === 'study-mark') {
-      const id = actionEl.getAttribute('data-id');
-      const status = actionEl.getAttribute('data-status');
-      setMastery(id, status, status === 'mastered');
-      render();
-    } else if (action === 'study-reset-filters') {
-      state.study.topic = 'ALL';
-      state.study.difficulty = 'ALL';
-      state.study.onlyBookmarked = false;
-      state.study.index = 0;
-      render();
-    } else if (action === 'fc-flip') {
-      state.flashcards.flipped = !state.flashcards.flipped;
-      render();
-    } else if (action === 'fc-prev') {
-      if (state.flashcards.index > 0) {
-        state.flashcards.index--;
-        state.flashcards.flipped = false;
-        render();
-      }
-    } else if (action === 'fc-next') {
-      const list = getFlashcardList();
-      if (state.flashcards.index < list.length - 1) {
-        state.flashcards.index++;
-        state.flashcards.flipped = false;
-        render();
-      }
-    } else if (action === 'fc-shuffle') {
-      const baseCount = state.questions.filter(q =>
-        (state.flashcards.subject === 'ALL' || q.subject === state.flashcards.subject) &&
-        (state.flashcards.topic === 'ALL' || q.topic === state.flashcards.topic)
-      ).length;
-      const order = Array.from({ length: baseCount }, (_, i) => i).sort(() => Math.random() - 0.5);
-      state.flashcards.shuffledOrder = order;
-      state.flashcards.index = 0;
-      state.flashcards.flipped = false;
-      render();
-    } else if (action === 'fc-rate') {
-      const id = actionEl.getAttribute('data-id');
-      const status = actionEl.getAttribute('data-status');
-      setMastery(id, status, status === 'mastered');
-      const list = getFlashcardList();
-      if (state.flashcards.index < list.length - 1) state.flashcards.index++;
-      state.flashcards.flipped = false;
-      render();
-    } else if (action === 'bank-toggle') {
-      const id = actionEl.getAttribute('data-id');
-      if (state.bank.expandedIds.has(id)) state.bank.expandedIds.delete(id);
-      else state.bank.expandedIds.add(id);
-      render();
-    } else if (action === 'bank-page') {
-      state.bank.page = Number(actionEl.getAttribute('data-page'));
-      render();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (action === 'exam-start') {
-      startExam();
-    } else if (action === 'exam-pick') {
-      const idx = Number(actionEl.getAttribute('data-idx'));
-      state.exam.answers[idx] = actionEl.getAttribute('data-key');
-      render();
-    } else if (action === 'exam-flag') {
-      const idx = Number(actionEl.getAttribute('data-idx'));
-      if (state.exam.flagged.has(idx)) state.exam.flagged.delete(idx);
-      else state.exam.flagged.add(idx);
-      render();
-    } else if (action === 'exam-goto') {
-      const idx = Number(actionEl.getAttribute('data-idx'));
-      if (idx >= 0 && idx < state.exam.items.length) {
-        state.exam.currentIndex = idx;
-        render();
-      }
-    } else if (action === 'exam-submit') {
-      submitExam();
-    } else if (action === 'exam-reset') {
-      state.exam.mode = 'setup';
-      render();
-    }
-  });
-
-  document.addEventListener('keydown', e => {
-    if (getCurrentRoute() !== '/flashcards') return;
-    if (e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
-    if (e.code === 'Space') {
-      e.preventDefault();
-      state.flashcards.flipped = !state.flashcards.flipped;
-      render();
-    } else if (e.code === 'ArrowRight') {
-      const list = getFlashcardList();
-      if (state.flashcards.index < list.length - 1) {
-        state.flashcards.index++;
-        state.flashcards.flipped = false;
-        render();
-      }
-    } else if (e.code === 'ArrowLeft') {
-      if (state.flashcards.index > 0) {
-        state.flashcards.index--;
-        state.flashcards.flipped = false;
-        render();
-      }
-    }
-  });
-
-  window.addEventListener('popstate', () => {
-    syncFromQuery();
-    render();
-  });
-
-  async function init() {
-    loadLocalState();
-    renderSnow();
-
-    const snowBtn = document.getElementById('btn-toggle-snow');
-    if (snowBtn) {
-      snowBtn.onclick = () => {
-        state.snowEnabled = !state.snowEnabled;
-        localStorage.setItem(SNOW_KEY, String(state.snowEnabled));
-        renderSnow();
-      };
-    }
-
-    const resetBtn = document.getElementById('btn-reset-progress');
-    if (resetBtn) {
-      resetBtn.onclick = () => {
-        if (!confirm('Xóa toàn bộ tiến độ đánh dấu, câu đã thuộc và lịch sử thi?')) return;
-        state.progress = {};
-        state.exams = [];
-        saveProgress();
-        saveExams();
-        render();
-      };
-    }
-
-    try {
-      const res = await fetch('/data/questions.json');
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      state.questions = await res.json();
-      const bannerEl = document.getElementById('banner-count');
-      if (bannerEl) bannerEl.textContent = state.questions.length.toLocaleString();
-      syncFromQuery();
-      render();
-    } catch (err) {
-      document.getElementById('app-root').innerHTML = `
-        <div class="bg-rose-950/30 border border-rose-500/40 rounded-2xl p-8 text-center space-y-2 max-w-lg mx-auto mt-10">
-          <h2 class="text-base font-bold text-rose-300">Không thể nạp dữ liệu câu hỏi</h2>
-          <p class="text-xs text-slate-300">Lỗi: ${escapeHtml(err.message)}. Hãy đảm bảo bạn đang chạy qua HTTP server (Localhost hoặc Vercel).</p>
+      host.innerHTML = `
+        <div class="fc-card ${this.flipped ? 'fc-flipped' : ''}">
+          <div class="fc-card-head">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span class="tag-badge">${Utils.escapeHtml(q.subject)}</span>
+              <span class="topic-pill-tag">${Utils.escapeHtml(q.topic)}</span>
+              <span class="diff-pill ${diffMeta.cls}">${diffMeta.label}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="dash-bench-tag">${this.flipped ? 'Mặt sau • Đáp án' : 'Mặt trước • Câu hỏi'}</span>
+              <button type="button" class="btn-star ${isStarred ? 'starred' : ''}" id="fcStarBtn" title="Lưu sao">${isStarred ? '★' : '☆'}</button>
+            </div>
+          </div>
+          <div class="fc-card-body">
+            <div style="font-size: 1.08rem; font-weight: 600; line-height: 1.6;">
+              ${Utils.formatQuestionText(q.questionText)}
+            </div>
+            ${q.codeSnippet ? Utils.renderCodeTerminal(q.codeSnippet, q.subject) : ''}
+            ${Utils.renderSlidePreview(q, false)}
+            <div class="fc-options-grid">${optsHtml}</div>
+            ${answerSection}
+          </div>
+          <div class="fc-card-foot">
+            <span>ID: ${Utils.escapeHtml(q.id)}</span>
+            <span>Bấm vào thẻ hoặc nhấn Space để ${this.flipped ? 'úp lại' : 'xem đáp án'}</span>
+          </div>
         </div>
       `;
+
+      const cardEl = host.querySelector('.fc-card');
+      if (cardEl) {
+        cardEl.onclick = (e) => {
+          if (e.target.closest('button') || e.target.closest('.slide-preview-wrap') || window.getSelection()?.toString()) return;
+          this.toggleFlip();
+        };
+      }
+
+      const starBtn = document.getElementById('fcStarBtn');
+      if (starBtn) {
+        starBtn.onclick = (e) => {
+          e.stopPropagation();
+          const st = this.dataStore.toggleStar(q.id);
+          starBtn.classList.toggle('starred', st);
+          starBtn.innerText = st ? '★' : '☆';
+          this.app.updateBadges();
+        };
+      }
     }
   }
 
-  init();
+  // =========================================================================
+  // 9. MISTAKES CONTROLLER
+  // =========================================================================
+
+  class MistakesController {
+    constructor(dataStore, app) {
+      this.dataStore = dataStore;
+      this.app = app;
+    }
+
+    init() {
+      const testBtn = document.getElementById('btnTestMistakesOnly');
+      if (testBtn) {
+        testBtn.onclick = () => {
+          const list = Array.from(this.dataStore.mistakesIds)
+            .map((id) => this.dataStore.getQuestion(id))
+            .filter(Boolean);
+          if (list.length === 0) {
+            alert('Bạn chưa có câu sai nào để luyện tập.');
+            return;
+          }
+          this.app.examController.startExam(list, `Luyện tập ${list.length} câu làm sai`, null, {
+            mode: 'practice',
+            durationMinutes: 0,
+            shuffleQuestions: true,
+            shuffleOptions: true
+          });
+        };
+      }
+
+      const clearBtn = document.getElementById('btnClearAllMistakes');
+      if (clearBtn) {
+        clearBtn.onclick = () => {
+          if (this.dataStore.mistakesIds.size === 0) return;
+          if (confirm('Xóa toàn bộ danh sách câu làm sai?')) {
+            this.dataStore.clearAllMistakes();
+            this.app.updateBadges();
+            this.render();
+          }
+        };
+      }
+    }
+
+    render() {
+      const listEl = document.getElementById('mistakesQuestionsList');
+      const summaryEl = document.getElementById('mistakesSummaryText');
+      if (!listEl) return;
+
+      const list = Array.from(this.dataStore.mistakesIds)
+        .map((id) => this.dataStore.getQuestion(id))
+        .filter(Boolean);
+
+      if (summaryEl) {
+        summaryEl.innerText = list.length > 0
+          ? `Bạn hiện có ${list.length} câu hỏi cần ôn tập lại.`
+          : 'Tuyệt vời! Bạn chưa có câu hỏi nào làm sai.';
+      }
+
+      listEl.innerHTML = '';
+      if (list.length === 0) {
+        listEl.innerHTML = `
+          <div class="study-card" style="text-align: center; padding: 2.5rem 1.5rem;">
+            <p style="color: var(--text-muted);">Chưa có câu sai nào được ghi nhận. Các câu trả lời sai khi làm bài thi hoặc tự kiểm tra sẽ tự động lưu tại đây.</p>
+          </div>
+        `;
+        return;
+      }
+
+      list.forEach((q, idx) => {
+        const card = this.app.studyController.createQuestionCard(q, idx);
+        const headerActions = card.querySelector('.study-card-header > div:last-child');
+        if (headerActions) {
+          const rmBtn = document.createElement('button');
+          rmBtn.type = 'button';
+          rmBtn.className = 'btn btn-outline btn-xs';
+          rmBtn.innerText = 'Đã nắm vững';
+          rmBtn.onclick = (e) => {
+            e.stopPropagation();
+            this.dataStore.removeMistake(q.id);
+            this.app.updateBadges();
+            this.render();
+          };
+          headerActions.prepend(rmBtn);
+        }
+        listEl.appendChild(card);
+      });
+    }
+  }
+
+  // =========================================================================
+  // 10. STATS & DASHBOARD CONTROLLER
+  // =========================================================================
+
+  class StatsController {
+    constructor(dataStore, app) {
+      this.dataStore = dataStore;
+      this.app = app;
+    }
+
+    init() {
+      const quickFe = document.getElementById('btnDashQuickFe');
+      if (quickFe) quickFe.onclick = () => this.app.startQuickSubjectExam('all');
+
+      const resetBtn = document.getElementById('btnResetAllStats');
+      if (resetBtn) resetBtn.onclick = () => this.resetAll();
+
+      const pracMistakes = document.getElementById('btnDashPracticeMistakes');
+      if (pracMistakes) {
+        pracMistakes.onclick = () => this.app.switchMode('mistakes');
+      }
+
+      const scFe = document.getElementById('dashShortcutCustomFe');
+      const scPr = document.getElementById('dashShortcutPractice');
+      const scFc = document.getElementById('dashShortcutFlashcards');
+      const scMis = document.getElementById('dashShortcutMistakes');
+
+      if (scFe) scFe.onclick = () => this.app.switchMode('fetest');
+      if (scPr) {
+        scPr.onclick = () => {
+          this.app.studyController.selfTestMode = true;
+          const toggleInter = document.getElementById('toggleInteractiveBtn');
+          if (toggleInter) {
+            toggleInter.classList.add('active');
+            toggleInter.innerText = 'Chế độ: Tự kiểm tra';
+          }
+          this.app.switchMode('study');
+        };
+      }
+      if (scFc) scFc.onclick = () => this.app.switchMode('flashcards');
+      if (scMis) scMis.onclick = () => this.app.switchMode('mistakes');
+    }
+
+    render() {
+      const setTxt = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = v;
+      };
+
+      const totalQ = this.dataStore.questions.length || 1594;
+      const practiced = this.dataStore.attemptedIds.size;
+      const passTarget = Math.ceil(totalQ * 0.75);
+      const compPct = totalQ > 0 ? Math.round((practiced / totalQ) * 100) : 0;
+
+      setTxt('dashOverallPctText', `${compPct}% (${practiced} / ${totalQ.toLocaleString('vi-VN')} câu)`);
+      const overallBar = document.getElementById('dashOverallBar');
+      if (overallBar) overallBar.style.width = `${compPct}%`;
+
+      setTxt('dashKpiPracticed', practiced);
+      setTxt('dashKpiTotal', `/ ${totalQ.toLocaleString('vi-VN')} câu`);
+      const pctBadge = document.getElementById('dashKpiPctBadge');
+      if (pctBadge) {
+        const ok = practiced >= passTarget;
+        pctBadge.className = `dash-kpi-badge ${ok ? 'good' : 'neutral'}`;
+        pctBadge.innerText = ok ? `${compPct}% (Đạt Pass ≥ 75%)` : `${compPct}% (Mốc Pass: ${passTarget} câu)`;
+      }
+      setTxt('dashKpiUnanswered', `Còn ${Math.max(0, totalQ - practiced)} câu chưa làm`);
+
+      // Collect recent attempts
+      const attempts = [];
+      this.dataStore.feTests.forEach((t) => {
+        if (Array.isArray(t.history) && t.history.length > 0) {
+          t.history.forEach((h) => {
+            attempts.push({
+              title: t.title || t.id,
+              date: h.date || t.lastDate || t.createdAt || '',
+              pct: typeof h.scorePct === 'number' ? h.scorePct : 0,
+              correct: h.correctCount || 0,
+              total: h.totalCount || t.questionIds?.length || 50,
+              testId: t.id,
+              turn: h.turn || 1
+            });
+          });
+        } else if (t.completed) {
+          attempts.push({
+            title: t.title || t.id,
+            date: t.lastDate || t.createdAt || '',
+            pct: t.scorePct || 0,
+            correct: t.correctCount || 0,
+            total: t.questionIds?.length || 50,
+            testId: t.id,
+            turn: 1
+          });
+        }
+      });
+
+      SUBJECT_KEYS.forEach((k) => {
+        const st = this.dataStore.moduleStats[k];
+        if (st && Array.isArray(st.history)) {
+          st.history.forEach((h) => {
+            attempts.push({
+              title: `${k} (${h.total}Q)`,
+              date: h.date || '',
+              pct: typeof h.pct === 'number' ? h.pct : 0,
+              correct: h.correct || 0,
+              total: h.total || 0,
+              subjectKey: k
+            });
+          });
+        }
+      });
+
+      const avgPct = attempts.length > 0
+        ? Math.round(attempts.reduce((s, a) => s + a.pct, 0) / attempts.length)
+        : null;
+      const avgPts = avgPct !== null ? avgPct * 10 : null;
+
+      setTxt('dashKpiAvgPts', avgPts !== null ? avgPts : '--');
+      setTxt('dashKpiTotalTests', `${attempts.length} lượt thi`);
+      const passBadge = document.getElementById('dashKpiPassStatus');
+      if (passBadge) {
+        if (avgPts === null) {
+          passBadge.className = 'dash-kpi-badge neutral';
+          passBadge.innerText = 'Chuẩn Pass ≥ 750 (75%)';
+        } else if (avgPts >= 750) {
+          passBadge.className = 'dash-kpi-badge good';
+          passBadge.innerText = 'Đạt chuẩn Pass (≥750)';
+        } else {
+          passBadge.className = 'dash-kpi-badge weak';
+          passBadge.innerText = 'Dưới chuẩn (<750)';
+        }
+      }
+
+      // Streak KPI
+      const streak = this.dataStore.getStreakInfo();
+      setTxt('dashKpiStreak', String(streak.current).padStart(2, '0'));
+      setTxt('dashKpiStreakRecord', `Hôm nay: ${streak.todayCount} câu • Kỷ lục: ${streak.best} ngày`);
+      const dotsEl = document.getElementById('dashStreakDots');
+      if (dotsEl) {
+        dotsEl.innerHTML = streak.last7
+          .map((d) => `<span class="streak-dot ${d.active ? 'active' : ''}" title="${d.label}: ${d.count} câu"></span>`)
+          .join('');
+      }
+
+      // Mistakes KPI
+      const mCount = this.dataStore.mistakesIds.size;
+      setTxt('dashKpiMistakes', mCount);
+      const mBySub = {};
+      this.dataStore.mistakesIds.forEach((id) => {
+        const q = this.dataStore.getQuestion(id);
+        if (q) mBySub[q.subject] = (mBySub[q.subject] || 0) + 1;
+      });
+      const topWeak = Object.entries(mBySub).sort((a, b) => b[1] - a[1])[0];
+      setTxt('dashKpiWeakMod', topWeak ? `Tập trung: ${topWeak[0]} (${topWeak[1]} câu)` : 'Chưa có câu sai');
+
+      // 5 Subject Mastery Rows
+      const grid = document.getElementById('moduleStatsGrid');
+      if (grid) {
+        grid.innerHTML = '';
+        SUBJECT_KEYS.forEach((k) => {
+          const info = SUBJECT_INFO[k];
+          const subQs = this.dataStore.getQuestionsBySubject(k);
+          const done = subQs.reduce((acc, q) => acc + (this.dataStore.attemptedIds.has(q.id) ? 1 : 0), 0);
+          const stat = this.dataStore.moduleStats[k] || { latest: null };
+          const hasTest = stat.latest && stat.latest.total > 0;
+          const pct = hasTest
+            ? stat.latest.percentage
+            : (subQs.length > 0 ? Math.round((done / subQs.length) * 100) : 0);
+
+          const statusCls = !hasTest && done === 0 ? 'neutral' : pct >= 75 ? 'good' : pct >= 60 ? 'medium' : 'weak';
+          const statusLabel = !hasTest && done === 0 ? 'Chưa học' : pct >= 75 ? 'Đạt chuẩn' : pct >= 60 ? 'Khá tốt' : 'Cần ôn lại';
+
+          const row = document.createElement('div');
+          row.className = 'dash-mod-row';
+          row.innerHTML = `
+            <div class="dash-mod-code ${statusCls}">${Utils.escapeHtml(k)}</div>
+            <div class="dash-mod-body">
+              <div class="dash-mod-title">${Utils.escapeHtml(info.name)}</div>
+              <div class="dash-mod-meta">
+                <span>Đã làm: <strong>${done}/${subQs.length}</strong> câu</span>
+                ${hasTest ? `<span>• Thi gần nhất: <strong>${stat.latest.correct}/${stat.latest.total}</strong> (${stat.latest.percentage}%)</span>` : ''}
+              </div>
+              <div class="dash-mod-bar"><div class="dash-mod-bar-fill ${statusCls}" style="width: ${pct}%;"></div></div>
+            </div>
+            <div class="dash-mod-right">
+              <div class="dash-mod-pct ${statusCls}"><strong>${pct}%</strong><span>${statusLabel}</span></div>
+              <button type="button" class="btn btn-outline btn-xs dash-mod-action">Ôn ngay</button>
+            </div>
+          `;
+          const actBtn = row.querySelector('.dash-mod-action');
+          if (actBtn) {
+            actBtn.onclick = () => {
+              this.app.selectSubject(k, true);
+            };
+          }
+          grid.appendChild(row);
+        });
+      }
+
+      // Daily Activity History
+      const dailyBody = document.getElementById('dashDailyHistoryBody');
+      const dayKeys = Object.keys(this.dataStore.dailyHistory)
+        .filter((k) => (this.dataStore.dailyHistory[k]?.qIds?.length || 0) > 0 || (this.dataStore.dailyHistory[k]?.tests || 0) > 0)
+        .sort((a, b) => b.localeCompare(a));
+      setTxt('dashActiveDaysCount', `${dayKeys.length} ngày hoạt động`);
+
+      if (dailyBody) {
+        if (dayKeys.length === 0) {
+          dailyBody.innerHTML = '<tr><td colspan="5" class="dash-empty-cell">Chưa có lịch sử hoạt động theo ngày. Hãy luyện tập hoặc thi thử để cập nhật.</td></tr>';
+        } else {
+          const todayStr = StorageService.todayKey();
+          dailyBody.innerHTML = dayKeys.slice(0, 14).map((k) => {
+            const d = this.dataStore.dailyHistory[k];
+            const qCnt = Array.isArray(d.qIds) ? d.qIds.length : 0;
+            const tCnt = d.tests || 0;
+            const bPts = d.bestPct ? `${d.bestPct * 10} / 1000` : '--';
+            const isToday = k === todayStr;
+            return `
+              <tr>
+                <td><strong>${Utils.escapeHtml(k)}</strong> ${isToday ? '<span class="dash-pill-sm good">Hôm nay</span>' : ''}</td>
+                <td><strong>${qCnt}</strong> câu</td>
+                <td>${tCnt} đề</td>
+                <td>${bPts}</td>
+                <td><span class="dash-pill-sm ${qCnt >= 20 || tCnt > 0 ? 'good' : 'neutral'}">${qCnt >= 20 || tCnt > 0 ? 'Tích cực' : 'Đã học'}</span></td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+
+      // Recent Attempts Table
+      const recentBody = document.getElementById('dashRecentAttemptsBody');
+      if (recentBody) {
+        if (attempts.length === 0) {
+          recentBody.innerHTML = '<tr><td colspan="5" class="dash-empty-cell">Chưa có lượt thi nào được ghi nhận.</td></tr>';
+        } else {
+          recentBody.innerHTML = attempts.slice(0, 8).map((a, idx) => {
+            const pts = a.pct * 10;
+            const passed = pts >= 750;
+            return `
+              <tr>
+                <td><strong>${Utils.escapeHtml(a.title)}</strong></td>
+                <td class="text-muted">${Utils.escapeHtml(a.date || '--')}</td>
+                <td><strong>${pts}</strong> <small>/ 1000 (${a.pct}%)</small></td>
+                <td><span class="dash-pill-sm ${passed ? 'good' : 'weak'}">${passed ? 'PASSED' : 'CẦN ÔN'}</span></td>
+                <td><button type="button" class="btn-link-action btn-dash-review" data-idx="${idx}">Xem lại</button></td>
+              </tr>
+            `;
+          }).join('');
+
+          recentBody.querySelectorAll('.btn-dash-review').forEach((btn) => {
+            btn.onclick = () => {
+              const a = attempts[Number(btn.dataset.idx)];
+              if (!a) return;
+              if (a.testId) {
+                this.app.feTestController.openMistakesModal(a.testId, a.turn);
+              } else if (a.subjectKey) {
+                this.app.selectSubject(a.subjectKey, true);
+              }
+            };
+          });
+        }
+      }
+
+      this.renderScoreTrend(attempts.slice(0, 7).reverse());
+    }
+
+    renderScoreTrend(points) {
+      const box = document.getElementById('dashScoreTrendBox');
+      const deltaEl = document.getElementById('dashTrendDelta');
+      if (!box) return;
+
+      if (!points || points.length === 0) {
+        if (deltaEl) deltaEl.innerText = '--';
+        box.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem;">Hoàn thành ít nhất 1 bài thi để hiển thị biểu đồ xu hướng điểm.</div>';
+        return;
+      }
+
+      if (deltaEl) {
+        const last = points[points.length - 1].pct * 10;
+        if (points.length >= 2) {
+          const diff = last - (points[points.length - 2].pct * 10);
+          deltaEl.innerText = `${diff >= 0 ? '+' : ''}${diff} pts`;
+          deltaEl.style.color = diff >= 0 ? 'var(--exp-green)' : 'var(--correct-red)';
+        } else {
+          deltaEl.innerText = `${last} pts`;
+        }
+      }
+
+      const W = 380;
+      const H = 175;
+      const padX = 28;
+      const padTop = 18;
+      const padBot = 28;
+      const plotW = W - padX * 2;
+      const plotH = H - padTop - padBot;
+
+      const coords = points.map((p, i) => {
+        const pt = p.pct * 10;
+        const x = points.length === 1 ? W / 2 : padX + (i / (points.length - 1)) * plotW;
+        const y = padTop + plotH - (pt / 1000) * plotH;
+        return { x: Math.round(x), y: Math.round(y), pt, idx: i + 1 };
+      });
+
+      const passY = Math.round(padTop + plotH - 0.75 * plotH);
+      const polyPoints = coords.map((c) => `${c.x},${c.y}`).join(' ');
+      const areaPoints = `${coords[0].x},${padTop + plotH} ${polyPoints} ${coords[coords.length - 1].x},${padTop + plotH}`;
+
+      box.innerHTML = `
+        <svg viewBox="0 0 ${W} ${H}" class="dash-trend-svg">
+          <line x1="${padX}" y1="${passY}" x2="${W - padX}" y2="${passY}" stroke="#10b981" stroke-dasharray="4 4" stroke-width="1"/>
+          <text x="${W - padX}" y="${passY - 4}" text-anchor="end" fill="#10b981" font-size="9.5" font-weight="600">PASS (750)</text>
+          ${coords.length > 1 ? `<polygon points="${areaPoints}" fill="rgba(29, 114, 184, 0.12)"/>` : ''}
+          ${coords.length > 1 ? `<polyline points="${polyPoints}" fill="none" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+          ${coords.map((c) => `
+            <circle cx="${c.x}" cy="${c.y}" r="4" fill="${c.pt >= 750 ? '#10b981' : '#ef4444'}" stroke="var(--bg-card)" stroke-width="1.5"/>
+            <text x="${c.x}" y="${H - 8}" text-anchor="middle" fill="var(--text-muted)" font-size="9.5">L${c.idx} (${c.pt})</text>
+          `).join('')}
+        </svg>
+      `;
+    }
+
+    resetAll() {
+      if (!confirm('Bạn có chắc chắn muốn đặt lại toàn bộ thống kê tiến độ, lịch sử ngày và câu sai?')) return;
+      this.dataStore.moduleStats = {};
+      this.dataStore.dailyHistory = {};
+      this.dataStore.attemptedIds.clear();
+      this.dataStore.mistakesIds.clear();
+      StorageService.saveModuleStats({});
+      StorageService.saveDailyHistory({});
+      StorageService.saveAttempted(this.dataStore.attemptedIds);
+      StorageService.saveMistakes(this.dataStore.mistakesIds);
+      this.app.updateBadges();
+      this.render();
+    }
+  }
+
+  // =========================================================================
+  // 11. THEME MANAGER & MAIN APP ORCHESTRATOR
+  // =========================================================================
+
+  class ThemeManager {
+    static init() {
+      const saved = StorageService.getTheme();
+      document.documentElement.setAttribute('data-theme', saved);
+      ThemeManager.syncButtonLabel(saved);
+    }
+
+    static toggle() {
+      const cur = document.documentElement.getAttribute('data-theme') || 'light';
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      StorageService.setTheme(next);
+      ThemeManager.syncButtonLabel(next);
+    }
+
+    static syncButtonLabel(theme) {
+      const btn = document.getElementById('themeToggleBtn');
+      if (btn) btn.innerText = theme === 'dark' ? 'Sáng' : 'Tối';
+    }
+  }
+
+  class App {
+    constructor() {
+      this.dataStore = new ExamDataStore();
+      this.activeMode = 'stats';
+      this.activeSubject = 'all';
+
+      this.studyController = new StudyController(this.dataStore, this);
+      this.examController = new ExamController(this.dataStore, this);
+      this.feTestController = new FeTestController(this.dataStore, this);
+      this.flashcardsController = new FlashcardsController(this.dataStore, this);
+      this.mistakesController = new MistakesController(this.dataStore, this);
+      this.statsController = new StatsController(this.dataStore, this);
+    }
+
+    async boot() {
+      ThemeManager.init();
+      const collapsed = StorageService.getJson(STORAGE_KEYS.SIDEBAR_COLLAPSED, false);
+      if (collapsed && window.innerWidth > 860) {
+        document.body.classList.add('sidebar-collapsed');
+      }
+
+      try {
+        await this.dataStore.loadQuestions();
+      } catch (err) {
+        const statsView = document.getElementById('statsView');
+        if (statsView) {
+          statsView.innerHTML = `<div class="study-card"><h3>Không thể tải ngân hàng câu hỏi</h3><p style="color: var(--correct-red);">${Utils.escapeHtml(err.message)}</p></div>`;
+        }
+        return;
+      }
+
+      this.updateSubjectCounts();
+      this.studyController.init();
+      this.examController.init();
+      this.feTestController.init();
+      this.flashcardsController.init();
+      this.mistakesController.init();
+      this.statsController.init();
+
+      this.bindGlobalEvents();
+      this.updateBadges();
+      this.syncFromUrl(false);
+    }
+
+    updateSubjectCounts() {
+      const allCnt = document.getElementById('count-all');
+      if (allCnt) allCnt.innerText = this.dataStore.questions.length;
+      SUBJECT_KEYS.forEach((k) => {
+        const el = document.getElementById(`count-${k}`);
+        if (el) el.innerText = this.dataStore.getQuestionsBySubject(k).length;
+      });
+    }
+
+    updateBadges() {
+      const sEl = document.getElementById('starredCount');
+      const mEl = document.getElementById('mistakesTabCount');
+      if (sEl) sEl.innerText = this.dataStore.starredIds.size;
+      if (mEl) mEl.innerText = this.dataStore.mistakesIds.size;
+
+      const total = this.dataStore.questions.length || 1;
+      const pct = Math.min(100, Math.round((this.dataStore.attemptedIds.size / total) * 100));
+      const bar = document.getElementById('globalProgressBar');
+      if (bar && this.activeMode !== 'exam') bar.style.width = `${pct}%`;
+    }
+
+    selectSubject(subKey, switchToStudyIfDashboard = false) {
+      this.activeSubject = subKey || 'all';
+      document.querySelectorAll('#modulesBar .sidebar-mod-item').forEach((b) => {
+        b.classList.toggle('active', b.dataset.mod === this.activeSubject);
+      });
+
+      this.studyController.setSubject(this.activeSubject);
+      this.flashcardsController.setSubject(this.activeSubject);
+      this.feTestController.setSubject(this.activeSubject);
+
+      if (switchToStudyIfDashboard || this.activeMode === 'stats' || this.activeMode === 'exam' || this.activeMode === 'results') {
+        this.switchMode('study');
+      }
+      this.closeMobileSidebar();
+    }
+
+    startQuickSubjectExam(subKey) {
+      this.examController.startDefaultSubjectExam(subKey || this.activeSubject);
+    }
+
+    switchMode(mode, pushUrl = true) {
+      this.activeMode = mode;
+
+      // View panels visibility
+      const map = {
+        stats: 'statsView',
+        study: 'studyView',
+        exam: 'examView',
+        results: 'resultsView',
+        fetest: 'fetestView',
+        flashcards: 'flashcardsView',
+        mistakes: 'mistakesView'
+      };
+      Object.values(map).forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+      const activePanel = document.getElementById(map[mode] || 'statsView');
+      if (activePanel) activePanel.style.display = 'block';
+
+      // Topbar active tab pill
+      document.querySelectorAll('.topbar-tab-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.mode === mode || (mode === 'results' && btn.dataset.mode === 'exam'));
+      });
+
+      // SEB Sticky Bar visibility
+      const sebBar = document.getElementById('sebStickyBar');
+      if (sebBar) {
+        sebBar.style.display = (mode === 'exam' && this.examController.activeExam && !this.examController.activeExam.submitted) ? 'block' : 'none';
+      }
+
+      // Render target view
+      if (mode === 'stats') {
+        this.statsController.render();
+      } else if (mode === 'study') {
+        this.studyController.render();
+      } else if (mode === 'fetest') {
+        this.feTestController.render();
+      } else if (mode === 'flashcards') {
+        this.flashcardsController.render();
+      } else if (mode === 'mistakes') {
+        this.mistakesController.render();
+      } else if (mode === 'exam') {
+        if (!this.examController.activeExam || this.examController.activeExam.submitted) {
+          this.examController.startDefaultSubjectExam(this.activeSubject);
+          return;
+        }
+      }
+
+      if (mode !== 'exam') this.updateBadges();
+
+      if (pushUrl && window.history && window.history.pushState) {
+        const routeMap = {
+          stats: '/',
+          study: '/study',
+          exam: '/exam',
+          fetest: '/fetest',
+          flashcards: '/flashcards',
+          mistakes: '/mistakes'
+        };
+        const targetPath = routeMap[mode];
+        if (targetPath && window.location.pathname !== targetPath) {
+          try {
+            window.history.pushState({ mode }, '', targetPath);
+          } catch (e) {}
+        }
+      }
+
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
+    syncFromUrl(pushUrl = false) {
+      const path = window.location.pathname.toLowerCase();
+      const params = new URLSearchParams(window.location.search);
+      const subParam = params.get('subject');
+      if (subParam && SUBJECT_KEYS.includes(subParam.toUpperCase())) {
+        this.activeSubject = subParam.toUpperCase();
+        document.querySelectorAll('#modulesBar .sidebar-mod-item').forEach((b) => {
+          b.classList.toggle('active', b.dataset.mod === this.activeSubject);
+        });
+        this.studyController.setSubject(this.activeSubject);
+        this.flashcardsController.setSubject(this.activeSubject);
+        this.feTestController.setSubject(this.activeSubject);
+      }
+
+      if (path === '/study' || path === '/questions') {
+        this.switchMode('study', pushUrl);
+      } else if (path === '/exam') {
+        this.switchMode('exam', pushUrl);
+      } else if (path === '/fetest') {
+        this.switchMode('fetest', pushUrl);
+      } else if (path === '/flashcards') {
+        this.switchMode('flashcards', pushUrl);
+      } else if (path === '/mistakes') {
+        this.switchMode('mistakes', pushUrl);
+      } else {
+        this.switchMode('stats', pushUrl);
+      }
+    }
+
+    closeMobileSidebar() {
+      const sidebar = document.getElementById('appSidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      if (sidebar) sidebar.classList.remove('open');
+      if (backdrop) backdrop.classList.remove('active');
+    }
+
+    bindGlobalEvents() {
+      // Topbar tabs
+      document.querySelectorAll('.topbar-tab-btn').forEach((btn) => {
+        btn.onclick = () => this.switchMode(btn.dataset.mode);
+      });
+
+      const logoBtn = document.getElementById('logoBtn');
+      if (logoBtn) logoBtn.onclick = () => this.switchMode('stats');
+
+      const themeBtn = document.getElementById('themeToggleBtn');
+      if (themeBtn) themeBtn.onclick = () => ThemeManager.toggle();
+
+      // Starred button in topbar -> jump to Study with Starred filter
+      const starredTopBtn = document.getElementById('starredBtn');
+      if (starredTopBtn) {
+        starredTopBtn.onclick = () => {
+          this.switchMode('study');
+          this.studyController.toggleStarredOnly(true);
+        };
+      }
+
+      // Sidebar module pills
+      document.querySelectorAll('#modulesBar .sidebar-mod-item').forEach((btn) => {
+        btn.onclick = () => this.selectSubject(btn.dataset.mod, this.activeMode === 'stats');
+      });
+
+      // Sidebar collapse/expand & mobile drawer
+      const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+      const mobileToggle = document.getElementById('mobileSidebarToggle');
+      const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+      const sidebar = document.getElementById('appSidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+
+      const toggleSidebar = () => {
+        if (!sidebar) return;
+        if (window.innerWidth <= 860) {
+          sidebar.classList.toggle('open');
+          if (backdrop) backdrop.classList.toggle('active', sidebar.classList.contains('open'));
+        } else {
+          const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+          StorageService.setJson(STORAGE_KEYS.SIDEBAR_COLLAPSED, isCollapsed);
+        }
+      };
+
+      if (sidebarToggleBtn) sidebarToggleBtn.onclick = toggleSidebar;
+      if (mobileToggle) mobileToggle.onclick = toggleSidebar;
+      if (sidebarCloseBtn) sidebarCloseBtn.onclick = () => this.closeMobileSidebar();
+      if (backdrop) backdrop.onclick = () => this.closeMobileSidebar();
+
+      // Search input
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) {
+        let debounceTimer = null;
+        searchInput.oninput = () => {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            this.studyController.setSearch(searchInput.value);
+          }, 180);
+        };
+        searchInput.onkeydown = (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            this.studyController.setSearch(searchInput.value);
+            if (this.activeMode !== 'study') this.switchMode('study');
+          }
+        };
+      }
+
+      // Global delegated handlers for Copy CLI & Toggle Slide Image
+      document.addEventListener('click', (e) => {
+        const cliBtn = e.target.closest('.btn-copy-cli');
+        if (cliBtn) {
+          e.stopPropagation();
+          Utils.copyCli(cliBtn, cliBtn.getAttribute('data-cli') || '');
+          return;
+        }
+        const slideBtn = e.target.closest('.btn-toggle-slide');
+        if (slideBtn) {
+          e.stopPropagation();
+          const targetId = slideBtn.getAttribute('data-target');
+          const panel = targetId ? document.getElementById(targetId) : null;
+          if (panel) {
+            const isHidden = panel.style.display === 'none';
+            panel.style.display = isHidden ? 'block' : 'none';
+            slideBtn.innerText = isHidden ? 'Ẩn Slide' : 'Xem Slide gốc';
+          }
+        }
+      });
+
+      // Keyboard shortcuts: Ctrl+B (Sidebar), Ctrl+K (Search), Ctrl+Enter (Submit Exam)
+      window.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+          e.preventDefault();
+          toggleSidebar();
+        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+          e.preventDefault();
+          if (searchInput) searchInput.focus();
+        } else if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          if (this.activeMode === 'exam' && this.examController.activeExam && !this.examController.activeExam.submitted) {
+            e.preventDefault();
+            this.examController.openSubmitModal();
+          }
+        }
+      });
+
+      window.addEventListener('popstate', () => {
+        this.syncFromUrl(false);
+      });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const app = new App();
+    window.__fuEosApp = app;
+    app.boot();
+  });
 })();
