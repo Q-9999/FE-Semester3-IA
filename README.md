@@ -24,21 +24,8 @@ Hệ thống bao gồm 1,594 câu hỏi trắc nghiệm có đáp án và giải
 
 Toàn bộ tiến độ học tập và lịch sử bài thi được lưu trực tiếp trên trình duyệt thông qua LocalStorage.
 
-## 3. Cấu trúc thư mục
 
-```text
-Deploy-vercel/
-├── data/
-│   └── questions.json   # Dữ liệu 1,594 câu hỏi trắc nghiệm
-├── index.html           # Giao diện khung của ứng dụng
-├── app.js               # Mã nguồn xử lý giao diện và chức năng
-├── vercel.json          # Cấu hình điều hướng đường dẫn cho Vercel
-├── package.json         # Thông tin dự án và lệnh chạy cục bộ
-├── .gitignore           # Danh sách tệp bỏ qua khi đưa lên Git
-└── README.md            # Tài liệu hướng dẫn
-```
-
-## 4. Chạy ứng dụng trên máy cá nhân
+## 3. Chạy ứng dụng trên máy cá nhân
 
 Yêu cầu máy tính đã cài đặt Node.js. Mở terminal tại thư mục dự án và chạy:
 
