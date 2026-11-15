@@ -44,7 +44,6 @@ Website-FE-Semester3_IA/
 ├── server.mjs                # HTTP server tĩnh & SPA fallback cho localhost
 ├── start.sh                  # Script khởi chạy nhanh (bash)
 ├── package.json              # Cấu hình npm scripts
-├── vercel.json               # Cấu hình deploy static & SPA rewrites trên Vercel
 ├── .gitignore
 └── README.md
 ```
@@ -66,7 +65,3 @@ npm start
 ```
 
 Mặc định server chạy tại `http://127.0.0.1:3000` (có thể tùy chỉnh qua biến môi trường `PORT` và `HOST`).
-
-## Deploy lên Vercel
-
-Repository hỗ trợ deploy trực tiếp lên Vercel ở thư mục gốc thông qua [vercel.json](./vercel.json) (`outputDirectory: "."` và SPA rewrites cho các route không phải file tĩnh hoặc `/data/`).
