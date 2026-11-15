@@ -393,13 +393,15 @@
       this.questions = raw.map((item) => {
         const subject = (item.subject || 'CSD203').toUpperCase();
         const correctKey = String(item.correctAnswer || 'A').trim().toUpperCase();
+        const parsedKeys = Array.from(new Set(correctKey.replace(/[^A-Z]/g, '').split('')));
+        const correctKeys = parsedKeys.length > 0 ? parsedKeys : ['A'];
         const opts = Array.isArray(item.options)
           ? item.options.map((o, idx) => {
               const key = String(o.key || String.fromCharCode(65 + idx)).trim().toUpperCase();
               return {
                 key,
                 text: String(o.text ?? ''),
-                isCorrect: key === correctKey
+                isCorrect: correctKeys.includes(key)
               };
             })
           : [];
@@ -414,6 +416,8 @@
           codeSnippet: item.codeSnippet ? String(item.codeSnippet) : '',
           options: opts,
           correctAnswer: correctKey,
+          correctKeys,
+          isMultiple: correctKeys.length > 1,
           explanation: item.explanation ? String(item.explanation) : '',
           imageFileName: item.imageFileName || '',
           imagePath: item.imagePath || '',
@@ -444,6 +448,22 @@
       });
 
       this.topicsBySubject.set('all', allTopics);
+    }
+
+    /**
+     * Checks whether the chosen option keys match a question's exact correct key set.
+     */
+    static isOptionSetCorrect(q, selectedKeys) {
+      if (!q || !Array.isArray(q.correctKeys) || q.correctKeys.length === 0) return false;
+      const rawArr = Array.isArray(selectedKeys) ? selectedKeys : (selectedKeys ? [selectedKeys] : []);
+      const normalized = Array.from(
+        new Set(
+          rawArr
+            .map((k) => String(k || '').trim().toUpperCase())
+            .filter(Boolean)
+        )
+      );
+      return normalized.length === q.correctKeys.length && q.correctKeys.every((k) => normalized.includes(k));
     }
 
     getQuestion(id) {
@@ -862,8 +882,12 @@
 
       const isStarred = this.dataStore.starredIds.has(q.id);
       const diffMeta = Utils.getDifficultyMeta(q.difficulty);
-      const pickedKey = this.selfSelectedMap.get(q.id) || null;
-      const isRevealed = this.selfTestMode ? Boolean(pickedKey) : !this.hideAnswers;
+      const rawPicked = this.selfSelectedMap.get(q.id);
+      const pickedKeys = Array.isArray(rawPicked) ? rawPicked : (rawPicked ? [rawPicked] : []);
+      const requiredCount = q.correctKeys?.length || 1;
+      const isRevealed = this.selfTestMode
+        ? (q.isMultiple ? pickedKeys.length >= requiredCount : pickedKeys.length > 0)
+        : !this.hideAnswers;
 
       const codeHtml = q.codeSnippet ? Utils.renderCodeTerminal(q.codeSnippet, q.subject) : '';
       const slideHtml = Utils.renderSlidePreview(q, false);
@@ -871,19 +895,24 @@
       let optsHtml = '';
       q.options.forEach((opt, optIdx) => {
         const letter = opt.key || String.fromCharCode(65 + optIdx);
+        const isPicked = pickedKeys.includes(letter);
         let cls = 'study-option';
         let badge = '';
+        let pendingStyle = '';
 
         if (this.selfTestMode) {
           cls += ' interactive-opt';
-          if (pickedKey) {
+          if (isRevealed) {
             if (opt.isCorrect) {
               cls += ' user-selected-correct';
-              badge = '<span class="study-option-badge badge-green">Đáp án đúng</span>';
-            } else if (pickedKey === letter) {
+              badge = `<span class="study-option-badge badge-green">${isPicked ? 'Bạn chọn (Đúng)' : 'Đáp án đúng'}</span>`;
+            } else if (isPicked) {
               cls += ' user-selected-wrong';
               badge = '<span class="study-option-badge badge-red">Bạn chọn (Sai)</span>';
             }
+          } else if (isPicked) {
+            pendingStyle = ' style="border-color: var(--primary); background: var(--primary-light);"';
+            badge = `<span class="study-option-badge" style="color: var(--primary); background: rgba(29, 114, 184, 0.14);">Đã chọn (${pickedKeys.length}/${requiredCount})</span>`;
           }
         } else if (opt.isCorrect && !this.hideAnswers) {
           cls += ' correct';
@@ -891,7 +920,7 @@
         }
 
         optsHtml += `
-          <div class="${cls}" data-optkey="${letter}">
+          <div class="${cls}" data-optkey="${letter}"${pendingStyle}>
             <span class="option-indicator">${letter}</span>
             <div style="flex: 1;">${Utils.escapeHtml(opt.text)}</div>
             ${badge}
@@ -920,6 +949,7 @@
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <span class="study-qnum">Câu ${index + 1}</span>
             <span class="tag-badge">${Utils.escapeHtml(q.subject)}</span>
+            ${q.isMultiple ? `<span class="tag-badge" style="background: #fef3c7; color: #b45309;">Chọn ${requiredCount} đáp án</span>` : ''}
             <span class="topic-pill-tag">${Utils.escapeHtml(q.topic)}</span>
             <span class="diff-pill ${diffMeta.cls}">${diffMeta.label}</span>
           </div>
@@ -967,17 +997,41 @@
         card.querySelectorAll('.study-option.interactive-opt').forEach((optEl) => {
           optEl.onclick = (e) => {
             if (e.target.closest('.copy-btn')) return;
-            const chosenKey = optEl.getAttribute('data-optkey');
-            this.selfSelectedMap.set(q.id, chosenKey);
-            const isOk = chosenKey === q.correctAnswer;
-            this.dataStore.markAttempted([q.id]);
-            this.dataStore.recordDailyActivity([q.id]);
-            if (isOk) {
-              this.dataStore.removeMistake(q.id);
+            const chosenKey = String(optEl.getAttribute('data-optkey') || '').trim().toUpperCase();
+            if (!chosenKey) return;
+
+            let nextKeys;
+            if (q.isMultiple) {
+              if (isRevealed) {
+                nextKeys = [chosenKey];
+              } else if (pickedKeys.includes(chosenKey)) {
+                nextKeys = pickedKeys.filter((k) => k !== chosenKey);
+              } else {
+                nextKeys = [...pickedKeys, chosenKey];
+              }
             } else {
-              this.dataStore.addMistake(q.id);
+              nextKeys = [chosenKey];
             }
-            this.app.updateBadges();
+
+            if (nextKeys.length === 0) {
+              this.selfSelectedMap.delete(q.id);
+            } else {
+              this.selfSelectedMap.set(q.id, nextKeys);
+            }
+
+            const nowRevealed = q.isMultiple ? nextKeys.length >= requiredCount : nextKeys.length > 0;
+            if (nowRevealed) {
+              const isOk = ExamDataStore.isOptionSetCorrect(q, nextKeys);
+              this.dataStore.markAttempted([q.id]);
+              this.dataStore.recordDailyActivity([q.id]);
+              if (isOk) {
+                this.dataStore.removeMistake(q.id);
+              } else {
+                this.dataStore.addMistake(q.id);
+              }
+              this.app.updateBadges();
+            }
+
             const replacement = this.createQuestionCard(q, index);
             card.replaceWith(replacement);
           };
@@ -1300,6 +1354,47 @@
       if (b2) b2.classList.toggle('warning', isUrgent);
     }
 
+    isQuestionAnswered(qid) {
+      if (!this.activeExam || !qid) return false;
+      const ans = this.activeExam.userAnswers[qid];
+      return Array.isArray(ans) ? ans.length > 0 : Boolean(ans);
+    }
+
+    isQuestionCorrect(q) {
+      if (!this.activeExam || !q) return false;
+      const ans = this.activeExam.userAnswers[q.id];
+      if (!ans) return false;
+      if (q.isMultiple) {
+        const keys = Array.isArray(ans) ? ans.map((o) => o.key) : [ans.key];
+        return ExamDataStore.isOptionSetCorrect(q, keys);
+      }
+      const chosen = Array.isArray(ans) ? ans[0] : ans;
+      return Boolean(chosen && chosen.isCorrect);
+    }
+
+    getCorrectSummaryText(q) {
+      if (!q || !Array.isArray(q.options)) return '';
+      return q.options
+        .filter((o) => o.isCorrect)
+        .map((o) => `${o.key}. ${o.text}`)
+        .join(' | ');
+    }
+
+    revealPracticeAnswer(q) {
+      if (!this.activeExam || !q) return;
+      this.activeExam.revealedIds.add(q.id);
+      this.dataStore.markAttempted([q.id]);
+      this.dataStore.recordDailyActivity([q.id]);
+      if (this.isQuestionCorrect(q)) {
+        this.dataStore.removeMistake(q.id);
+      } else {
+        this.dataStore.addMistake(q.id);
+      }
+      this.app.updateBadges();
+      this.renderCurrentQuestion();
+      this.renderGrid();
+    }
+
     renderGrid() {
       const grid = document.getElementById('examGrid');
       if (!grid || !this.activeExam) return;
@@ -1314,7 +1409,7 @@
         btn.className = 'q-grid-btn';
         btn.innerText = idx + 1;
 
-        const isAns = Boolean(this.activeExam.userAnswers[q.id]);
+        const isAns = this.isQuestionAnswered(q.id);
         const isRev = this.activeExam.reviewFlags.has(q.id);
         const isAct = this.activeExam.currentIndex === idx;
 
@@ -1324,7 +1419,7 @@
         } else if (isAns) {
           btn.classList.add('answered');
           if (this.activeExam.mode === 'practice' && this.activeExam.revealedIds.has(q.id)) {
-            btn.classList.add(this.activeExam.userAnswers[q.id].isCorrect ? 'practice-correct' : 'practice-wrong');
+            btn.classList.add(this.isQuestionCorrect(q) ? 'practice-correct' : 'practice-wrong');
           }
           answered++;
         }
@@ -1409,8 +1504,9 @@
       const optsEl = document.getElementById('examOptionsList');
       const fbEl = document.getElementById('examInstantFeedback');
 
+      const requiredCount = q.correctKeys?.length || 1;
       if (titleEl) titleEl.innerText = `${idx + 1}. ${q.topic || 'Question'}`;
-      if (tagEl) tagEl.innerText = `${q.subject} • 1 pt`;
+      if (tagEl) tagEl.innerText = `${q.subject} • ${q.isMultiple ? `Chọn ${requiredCount} đáp án • ` : ''}1 pt`;
       if (textEl) textEl.innerHTML = Utils.formatQuestionText(q.questionText);
       if (codeEl) codeEl.innerHTML = q.codeSnippet ? Utils.renderCodeTerminal(q.codeSnippet, q.subject) : '';
 
@@ -1422,13 +1518,16 @@
 
       const isPractice = this.activeExam.mode === 'practice';
       const isRevealed = isPractice && this.activeExam.revealedIds.has(q.id);
-      const userAns = this.activeExam.userAnswers[q.id] || null;
+      const userAns = this.activeExam.userAnswers[q.id] || (q.isMultiple ? [] : null);
 
       if (optsEl) {
         optsEl.innerHTML = '';
         q.displayOptions.forEach((opt, optIdx) => {
           const dispLetter = String.fromCharCode(65 + optIdx);
-          const isChecked = userAns && userAns.key === opt.key;
+          const isChecked = q.isMultiple
+            ? Array.isArray(userAns) && userAns.some((a) => a.key === opt.key)
+            : Boolean(userAns && userAns.key === opt.key);
+          const inputType = q.isMultiple ? 'checkbox' : 'radio';
 
           const label = document.createElement('label');
           let cls = 'exam-option-label';
@@ -1437,7 +1536,7 @@
           if (isRevealed) {
             if (opt.isCorrect) {
               cls += ' practice-opt-correct';
-              badgeHtml = '<span class="practice-opt-badge correct">Đáp án đúng</span>';
+              badgeHtml = `<span class="practice-opt-badge correct">${isChecked ? 'Bạn chọn (Đúng)' : 'Đáp án đúng'}</span>`;
             } else if (isChecked) {
               cls += ' practice-opt-wrong';
               badgeHtml = '<span class="practice-opt-badge wrong">Chọn sai</span>';
@@ -1446,7 +1545,7 @@
 
           label.className = cls;
           label.innerHTML = `
-            <input type="radio" name="exam_opt_${q.id}" class="exam-option-input" value="${Utils.escapeHtml(opt.key)}" ${isChecked ? 'checked' : ''}>
+            <input type="${inputType}" name="exam_opt_${q.id}" class="exam-option-input" value="${Utils.escapeHtml(opt.key)}" ${isChecked ? 'checked' : ''}>
             <span class="option-indicator">${dispLetter}</span>
             <div style="flex: 1;">
               <div class="exam-option-text">${Utils.escapeHtml(opt.text)}</div>
@@ -1457,29 +1556,52 @@
           const input = label.querySelector('input');
           if (input) {
             input.onchange = () => {
-              this.activeExam.userAnswers[q.id] = opt;
-              if (isPractice) {
-                this.activeExam.revealedIds.add(q.id);
-                this.dataStore.markAttempted([q.id]);
-                this.dataStore.recordDailyActivity([q.id]);
-                if (opt.isCorrect) {
-                  this.dataStore.removeMistake(q.id);
+              if (q.isMultiple) {
+                let current = Array.isArray(this.activeExam.userAnswers[q.id])
+                  ? [...this.activeExam.userAnswers[q.id]]
+                  : [];
+                if (input.checked) {
+                  if (!current.some((a) => a.key === opt.key)) current.push(opt);
                 } else {
-                  this.dataStore.addMistake(q.id);
+                  current = current.filter((a) => a.key !== opt.key);
                 }
-                this.app.updateBadges();
-                this.renderCurrentQuestion();
+                if (current.length === 0) {
+                  delete this.activeExam.userAnswers[q.id];
+                } else {
+                  this.activeExam.userAnswers[q.id] = current;
+                }
+                if (isPractice && (isRevealed || current.length >= requiredCount)) {
+                  this.revealPracticeAnswer(q);
+                  return;
+                }
+              } else {
+                this.activeExam.userAnswers[q.id] = opt;
+                if (isPractice) {
+                  this.revealPracticeAnswer(q);
+                  return;
+                }
               }
               this.renderGrid();
             };
           }
           optsEl.appendChild(label);
         });
+
+        if (isPractice && q.isMultiple && !isRevealed) {
+          const chkBtn = document.createElement('button');
+          chkBtn.type = 'button';
+          chkBtn.className = 'btn btn-primary btn-xs';
+          chkBtn.style.alignSelf = 'flex-start';
+          chkBtn.style.marginTop = '4px';
+          chkBtn.innerText = 'Kiểm tra đáp án';
+          chkBtn.onclick = () => this.revealPracticeAnswer(q);
+          optsEl.appendChild(chkBtn);
+        }
       }
 
       if (fbEl) {
-        if (isRevealed && userAns) {
-          const isOk = userAns.isCorrect;
+        if (isRevealed) {
+          const isOk = this.isQuestionCorrect(q);
           const expHtml = q.explanation ? Utils.formatExplanation(q.explanation) : 'Đáp án đúng đã được đánh dấu trực tiếp ở trên.';
           fbEl.style.display = 'block';
           fbEl.innerHTML = `
@@ -1515,7 +1637,7 @@
     openSubmitModal() {
       if (!this.activeExam) return;
       const total = this.activeExam.questions.length;
-      const answered = Object.keys(this.activeExam.userAnswers).length;
+      const answered = this.activeExam.questions.filter((q) => this.isQuestionAnswered(q.id)).length;
       const unans = total - answered;
       const msg = document.getElementById('submitModalSummary');
       if (msg) {
@@ -1540,19 +1662,25 @@
 
       this.activeExam.questions.forEach((q) => {
         allIds.push(q.id);
-        const ans = this.activeExam.userAnswers[q.id];
-        if (!ans) {
+        const isAns = this.isQuestionAnswered(q.id);
+        const isOk = isAns && this.isQuestionCorrect(q);
+        const correctSummary = this.getCorrectSummaryText(q);
+        if (!isAns) {
           skipped++;
           wrongQuestions.push(q);
-          wrongDetails.push({ id: q.id, userText: null, correctText: q.options.find((o) => o.isCorrect)?.text || '' });
-        } else if (ans.isCorrect) {
+          wrongDetails.push({ id: q.id, userText: null, correctText: correctSummary });
+        } else if (isOk) {
           correct++;
           this.dataStore.removeMistake(q.id);
         } else {
           wrong++;
           this.dataStore.addMistake(q.id);
           wrongQuestions.push(q);
-          wrongDetails.push({ id: q.id, userText: ans.text, correctText: q.options.find((o) => o.isCorrect)?.text || '' });
+          const ans = this.activeExam.userAnswers[q.id];
+          const userText = Array.isArray(ans)
+            ? ans.map((o) => `${o.key}. ${o.text}`).join(' | ')
+            : (ans?.text || '');
+          wrongDetails.push({ id: q.id, userText, correctText: correctSummary });
         }
       });
 
@@ -1667,13 +1795,14 @@
       reviewList.innerHTML = '';
 
       this.activeExam.questions.forEach((q, idx) => {
+        const isAns = this.isQuestionAnswered(q.id);
         const userAns = this.activeExam.userAnswers[q.id];
-        const isCorrect = Boolean(userAns && userAns.isCorrect);
+        const isCorrect = isAns && this.isQuestionCorrect(q);
 
         const card = document.createElement('div');
         card.className = 'study-card';
 
-        const statusTag = !userAns
+        const statusTag = !isAns
           ? '<span class="tag-badge" style="background: #fef3c7; color: #b45309;">Bỏ qua</span>'
           : isCorrect
           ? '<span class="tag-badge" style="background: #dcfce7; color: #15803d;">Đúng</span>'
@@ -1681,13 +1810,15 @@
 
         const optsHtml = q.displayOptions.map((opt, optIdx) => {
           const letter = String.fromCharCode(65 + optIdx);
-          const isPicked = userAns && userAns.key === opt.key;
+          const isPicked = Array.isArray(userAns)
+            ? userAns.some((a) => a.key === opt.key)
+            : Boolean(userAns && userAns.key === opt.key);
           let cls = 'study-option';
           let badge = '';
 
           if (opt.isCorrect) {
             cls += ' user-selected-correct';
-            badge = '<span class="study-option-badge badge-green">Đáp án đúng</span>';
+            badge = `<span class="study-option-badge badge-green">${isPicked ? 'Bạn chọn (Đúng)' : 'Đáp án đúng'}</span>`;
           } else if (isPicked) {
             cls += ' user-selected-wrong';
             badge = '<span class="study-option-badge badge-red">Bạn chọn</span>';
@@ -2051,7 +2182,10 @@
         } else {
           bodyEl.innerHTML = this.modalWrongQuestions.map((q, idx) => {
             const det = wrongDetails[idx] || {};
-            const correctOpt = q.options.find((o) => o.isCorrect);
+            const correctOpts = q.options.filter((o) => o.isCorrect);
+            const correctDisplay = correctOpts.length > 0
+              ? correctOpts.map((o) => `${o.key}. ${o.text}`).join(' | ')
+              : (det.correctText || '');
             return `
               <div class="study-card" style="margin-bottom: 14px;">
                 <div class="study-card-header">
@@ -2063,7 +2197,7 @@
                 </div>
                 <div style="font-weight: 600; margin: 8px 0;">${Utils.formatQuestionText(q.questionText)}</div>
                 ${det.userText ? `<div style="color: var(--correct-red); font-size: 13.5px; margin-bottom: 4px;">✗ Bạn chọn: ${Utils.escapeHtml(det.userText)}</div>` : '<div style="color: #b45309; font-size: 13.5px; margin-bottom: 4px;">• Bỏ qua chưa chọn</div>'}
-                <div style="color: var(--exp-green); font-size: 13.5px; font-weight: 600;">✓ Đáp án đúng: ${Utils.escapeHtml(correctOpt ? `${correctOpt.key}. ${correctOpt.text}` : det.correctText || '')}</div>
+                <div style="color: var(--exp-green); font-size: 13.5px; font-weight: 600;">✓ Đáp án đúng: ${Utils.escapeHtml(correctDisplay)}</div>
                 ${q.explanation ? `<div class="explanation-box" style="margin-top: 8px;"><div class="exp-text">${Utils.formatExplanation(q.explanation)}</div></div>` : ''}
               </div>
             `;
@@ -2374,7 +2508,10 @@
 
       const isStarred = this.dataStore.starredIds.has(q.id);
       const diffMeta = Utils.getDifficultyMeta(q.difficulty);
-      const correctOpt = q.options.find((o) => o.isCorrect);
+      const correctOpts = q.options.filter((o) => o.isCorrect);
+      const correctDisplay = correctOpts.length > 0
+        ? correctOpts.map((o) => `${o.key}. ${o.text}`).join(' | ')
+        : q.correctAnswer;
 
       const optsHtml = q.options.map((opt) => {
         const cls = this.flipped && opt.isCorrect ? 'fc-opt-chip fc-opt-correct' : 'fc-opt-chip';
@@ -2384,7 +2521,7 @@
       const answerSection = this.flipped ? `
         <div class="explanation-box" style="margin-top: 8px;">
           <div style="font-weight: 700; color: var(--exp-green); margin-bottom: 6px;">
-            Đáp án đúng: ${Utils.escapeHtml(correctOpt ? `${correctOpt.key}. ${correctOpt.text}` : q.correctAnswer)}
+            Đáp án đúng: ${Utils.escapeHtml(correctDisplay)}
           </div>
           <div class="exp-text">
             ${q.explanation ? Utils.formatExplanation(q.explanation) : 'Chưa có giải thích bổ sung.'}
