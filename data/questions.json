@@ -14824,29 +14824,29 @@
     "options": [
       {
         "key": "A",
-        "text": "ρ (rho) operator"
+        "text": "RENAME relation TO new_relation"
       },
       {
         "key": "B",
-        "text": "RENAME operator"
+        "text": "RENAME attribute IN relation TO new_attribute"
       },
       {
         "key": "C",
-        "text": "AS operator"
+        "text": "ALTER TABLE relation RENAME TO new_relation"
       },
       {
         "key": "D",
-        "text": "CHANGE operator"
+        "text": "SELECT * FROM relation AS new_relation"
       }
     ],
     "correctAnswer": "A",
-    "explanation": "Trong Đại số quan hệ (Relational Algebra), phép đổi tên (Rename operation) được ký hiệu bằng chữ cái Hy Lạp rho (ρ). Phép toán này được sử dụng để đổi tên một quan hệ hoặc đổi tên các thuộc tính của một quan hệ nhằm tránh xung đột tên khi thực hiện các phép toán như Cartesian Product hoặc Join. Các phương án B, C, D không phải là ký hiệu chuẩn trong lý thuyết Đại số quan hệ.",
+    "explanation": "Trong các hệ thống và đề ôn tập DBI202 về phép đổi tên (Rename) ở mức đại số quan hệ / SQL chuẩn câu hỏi này, cú pháp `RENAME relation TO new_relation` (Đáp án A) dùng để đổi tên quan hệ.",
     "imageFileName": "023.png",
     "imagePath": "/SEMESTER_3_DBI202/023.png",
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-06T00:00:00Z",
-    "updatedAt": "2026-11-11T11:56:45.326Z"
+    "updatedAt": "2026-11-17T03:40:00.659Z"
   },
   {
     "id": "DBI202-Q015",
@@ -14859,19 +14859,19 @@
     "options": [
       {
         "key": "A",
-        "text": "SELECT * FROM Contest WHERE ContestDate >= '2006-05-25'"
-      },
-      {
-        "key": "B",
-        "text": "SELECT * FROM Contest GROUP BY ContestDate >= '2006-05-25'"
-      },
-      {
-        "key": "C",
         "text": "SELECT * FROM Contest WHERE ContestDate >= '05/25/2006'"
       },
       {
+        "key": "B",
+        "text": "SELECT * FROM Contest GROUPBY ContestDate >= '05/25/2006'"
+      },
+      {
+        "key": "C",
+        "text": "SELECT * FROM Contest WHERE ContestDate <= '05/25/2006'"
+      },
+      {
         "key": "D",
-        "text": "SELECT * FROM Contest HAVING ContestDate >= '2006-05-25'"
+        "text": "SELECT * FROM Contest HAVING ContestDate >= '05/25/2006'"
       }
     ],
     "correctAnswer": "A",
@@ -14881,7 +14881,7 @@
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-06T00:00:00Z",
-    "updatedAt": "2026-11-11T11:56:45.326Z"
+    "updatedAt": "2026-11-17T03:40:00.659Z"
   },
   {
     "id": "DBI202-Q016",
@@ -15815,7 +15815,7 @@
     "subjectName": "Introduction to Databases (SQL)",
     "topic": "Database Design & Integrity Constraints",
     "difficulty": "Easy",
-    "questionText": "Given the relation schema R(A, B, C, D) and a set of functional dependencies. Compute {A}+ (the closure of A).",
+    "questionText": "Given following schema R(A, B, C, D) and S = {A -> B, B -> C, C -> D}. Compute {A}+ ?",
     "codeSnippet": "",
     "options": [
       {
@@ -15842,7 +15842,7 @@
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-06T00:00:00Z",
-    "updatedAt": "2026-11-11T11:56:45.326Z"
+    "updatedAt": "2026-11-17T03:40:00.659Z"
   },
   {
     "id": "DBI202-Q043",
@@ -16379,7 +16379,7 @@
     "subjectName": "Introduction to Databases (SQL)",
     "topic": "Functional Dependencies & Normalization",
     "difficulty": "Hard",
-    "questionText": "The relation R(A,B,C,D) has following FDs: {AB -> C; AB -> D; ABC -> D; AC -> D}. Choose a correct statement about R?",
+    "questionText": "The relation R(A,B,C,D) has following FDs: { AB -> C ; ABD -> C ; ABC -> D ; AC -> D }. Choose a correct statement about R?",
     "codeSnippet": "",
     "options": [
       {
@@ -16393,20 +16393,16 @@
       {
         "key": "C",
         "text": "R is in BCNF"
-      },
-      {
-        "key": "D",
-        "text": "R is in 2NF"
       }
     ],
     "correctAnswer": "B",
-    "explanation": "Ta có tập phụ thuộc hàm F = {AB -> C, AB -> D, ABC -> D, AC -> D}. \n1. Tìm khóa của quan hệ R:\n- Xét thuộc tính A, B: AB xác định được C và D (thông qua AB -> C và AB -> D). Do đó, AB xác định tất cả các thuộc tính A, B, C, D. Vậy AB là siêu khóa, và vì không tập con nào của AB xác định được R nên AB là khóa chính (Candidate Key).\n- Các thuộc tính nguyên thủy (prime attributes) là A và B. Các thuộc tính không nguyên thủy (non-prime attributes) là C và D.\n2. Kiểm tra dạng chuẩn BCNF:\n- Xét phụ thuộc hàm AC -> D: A và C không chứa khóa AB (AC không phải là siêu khóa), nhưng D là thuộc tính không nguyên thủy. Do đó, R không đạt chuẩn BCNF.\n3. Kiểm tra dạng chuẩn 3NF:\n- Xét phụ thuộc hàm AC -> D: AC không phải là siêu khóa, và D là thuộc tính không nguyên thủy (non-prime attribute). Điều kiện này vi phạm định nghĩa của dạng chuẩn 3NF.\nVì vi phạm 3NF nên R cũng không thể đạt 3NF. Do đó, đáp án 'R is not in 3NF' là chính xác.",
+    "explanation": "Với F = { AB -> C ; ABD -> C ; ABC -> D ; AC -> D }, khóa duy nhất của R là AB (vì A và B không nằm ở vế phải và (AB)+ = ABCD). Xét phụ thuộc hàm AC -> D: vế trái AC không phải siêu khóa và vế phải D không phải thuộc tính khóa. Do đó R vi phạm 3NF (R is not in 3NF - Đáp án B).",
     "imageFileName": "069.png",
     "imagePath": "/SEMESTER_3_DBI202/069.png",
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-06T00:00:00Z",
-    "updatedAt": "2026-11-11T11:56:45.327Z"
+    "updatedAt": "2026-11-17T03:40:00.659Z"
   },
   {
     "id": "DBI202-Q059",
@@ -16559,29 +16555,29 @@
     "options": [
       {
         "key": "A",
-        "text": "SELECT * FROM Books WHERE CONTAINS((BookTitle, Description), 'computer')"
+        "text": "SELECT * FROM Books WHERE FREETEXT(*,'computer')"
       },
       {
         "key": "B",
-        "text": "SELECT * FROM Books WHERE BookTitle LIKE '%computer%' OR Description LIKE '%computer%'"
+        "text": "SELECT * FROM Books WHERE BookTitle LIKE '%computer%'"
       },
       {
         "key": "C",
-        "text": "SELECT * FROM Books WHERE FREETEXT((BookTitle, Description), 'computer')"
+        "text": "SELECT * FROM Books WHERE BookTitle = '%computer%' OR Description = '%computer%'"
       },
       {
         "key": "D",
-        "text": "SELECT * FROM Books WHERE CONTAINS(BookTitle, 'computer') AND CONTAINS(Description, 'computer')"
+        "text": "SELECT * FROM Books WHERE FREETEXT(BookTitle,'computer')"
       }
     ],
     "correctAnswer": "A",
-    "explanation": "Trong SQL Server, khi đã có Full-Text Index trên các cột, để tìm kiếm một từ cụ thể trong nhiều cột, hàm CONTAINS là lựa chọn tối ưu nhất. Cú pháp CONTAINS((column1, column2), 'search_term') cho phép tìm kiếm từ 'computer' trong cả hai cột BookTitle và Description. Phương án B sử dụng LIKE là tìm kiếm thông thường (không tận dụng Full-Text Index), phương án C (FREETEXT) tìm kiếm theo nghĩa gần đúng thay vì từ chính xác, và phương án D sử dụng AND thay vì OR nên không thỏa mãn yêu cầu tìm trong 'either column'.",
+    "explanation": "Để tìm kiếm toàn văn (full-text search) từ khóa 'computer' trong bất kỳ cột nào thuộc full-text index (`BookTitle` hoặc `Description`) của bảng `Books`, ta dùng `FREETEXT(*, 'computer')` (dấu `*` đại diện cho tất cả các cột đã được đánh full-text index). Đáp án B và D chỉ tìm trên cột `BookTitle`, còn C dùng toán tử `=` với ký tự đại diện `%` nên sai cú pháp tìm chuỗi con. Vậy đáp án đúng là A.",
     "imageFileName": "074.png",
     "imagePath": "/SEMESTER_3_DBI202/074.png",
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-06T00:00:00Z",
-    "updatedAt": "2026-11-11T11:56:45.327Z"
+    "updatedAt": "2026-11-17T03:40:00.659Z"
   },
   {
     "id": "DBI202-Q064",
@@ -18110,7 +18106,7 @@
     "subjectName": "Introduction to Databases (SQL)",
     "topic": "Database Design & Integrity Constraints",
     "difficulty": "Easy",
-    "questionText": "Which of the following best describes a Relational Database?",
+    "questionText": "What does an RDBMS consist of?",
     "codeSnippet": "",
     "options": [
       {
@@ -18137,7 +18133,7 @@
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-06T00:00:00Z",
-    "updatedAt": "2026-11-11T11:56:45.327Z"
+    "updatedAt": "2026-11-17T03:40:00.659Z"
   },
   {
     "id": "DBI202-Q108",
@@ -19510,7 +19506,7 @@
     "subjectName": "Introduction to Databases (SQL)",
     "topic": "Database Design & Integrity Constraints",
     "difficulty": "Easy",
-    "questionText": "We can use these with SQL alone. Stored-procedure in SQL queries and other statements to perform computations that cannot be done",
+    "questionText": "We can use these ______ in SQL queries and other statements to perform computations that cannot be done with SQL alone.",
     "codeSnippet": "",
     "options": [
       {
@@ -19527,17 +19523,17 @@
       },
       {
         "key": "D",
-        "text": "User-defined functions"
+        "text": "Stored-procedure"
       }
     ],
     "correctAnswer": "D",
-    "explanation": "Trong SQL Server, User-defined functions (UDFs) là các đối tượng cho phép thực hiện các tính toán phức tạp hoặc xử lý logic mà các câu lệnh SQL thuần túy (như SELECT đơn giản) không thể thực hiện được. UDFs có thể được gọi trực tiếp trong các câu lệnh SELECT, WHERE hoặc các biểu thức khác. Các phương án khác như Trigger (tự động thực thi khi có sự kiện DML), View (bảng ảo lưu trữ câu lệnh SELECT), và Index (cấu trúc hỗ trợ tìm kiếm) không được thiết kế với mục đích chính là thực hiện các tính toán logic phức tạp trong các biểu thức SQL như UDFs.",
+    "explanation": "Stored-procedure (thủ tục lưu trữ) cho phép viết các khối lệnh xử lý logic, tính toán phức tạp mà các câu lệnh SQL đơn lẻ không thực hiện trực tiếp được (Đáp án D).",
     "imageFileName": "160.png",
     "imagePath": "/SEMESTER_3_DBI202/160.png",
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-06T00:00:00Z",
-    "updatedAt": "2026-11-11T11:56:45.328Z"
+    "updatedAt": "2026-11-17T03:40:00.659Z"
   },
   {
     "id": "DBI202-Q148",
@@ -19895,34 +19891,34 @@
     "subjectName": "Introduction to Databases (SQL)",
     "topic": "ER Diagrams & Relational Model",
     "difficulty": "Medium",
-    "questionText": "Foreign key is the one in which the",
+    "questionText": "Foreign key is the one in which the ________ of one relation is referenced in another relation.",
     "codeSnippet": "",
     "options": [
       {
         "key": "A",
-        "text": "Primary key of one relation is referenced in another relation"
+        "text": "Foreign key"
       },
       {
         "key": "B",
-        "text": "Primary key of one relation is referenced in the same relation"
+        "text": "Primary key"
       },
       {
         "key": "C",
-        "text": "Foreign key of one relation is referenced in another relation"
+        "text": "References"
       },
       {
         "key": "D",
-        "text": "None of the mentioned"
+        "text": "Check constraint"
       }
     ],
-    "correctAnswer": "A",
-    "explanation": "Trong cơ sở dữ liệu quan hệ, Foreign Key (Khóa ngoại) là một cột hoặc tập hợp các cột trong một bảng (relation) dùng để liên kết dữ liệu với Primary Key (Khóa chính) của một bảng khác. Mục đích chính là duy trì tính toàn vẹn tham chiếu (referential integrity). Phương án A mô tả đúng định nghĩa cơ bản này. Các phương án khác sai vì khóa ngoại không tham chiếu đến chính nó (trừ trường hợp Self-referencing nhưng không phải định nghĩa tổng quát) hoặc không tham chiếu đến một khóa ngoại khác.",
+    "correctAnswer": "B",
+    "explanation": "Khóa ngoại (Foreign key) là thuộc tính (hoặc tập thuộc tính) trong một quan hệ dùng để tham chiếu tới khóa chính (Primary key) của một quan hệ khác nhằm đảm bảo toàn vẹn tham chiếu. Vậy đáp án đúng là B.",
     "imageFileName": "171.png",
     "imagePath": "/SEMESTER_3_DBI202/171.png",
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-06T00:00:00Z",
-    "updatedAt": "2026-11-11T11:56:45.328Z"
+    "updatedAt": "2026-11-17T03:40:00.659Z"
   },
   {
     "id": "DBI202-Q159",
@@ -23792,7 +23788,7 @@
     "subjectName": "Introduction to Databases (SQL)",
     "topic": "Database Design & Integrity Constraints",
     "difficulty": "Easy",
-    "questionText": "What is the primary purpose of data integrity in a database system?",
+    "questionText": "In the context of a DBMS, what is meant by \"data integrity\"?",
     "codeSnippet": "",
     "options": [
       {
@@ -23819,7 +23815,7 @@
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-06T00:00:00Z",
-    "updatedAt": "2026-11-11T11:56:45.330Z"
+    "updatedAt": "2026-11-17T03:40:00.659Z"
   },
   {
     "id": "DBI202-Q270",
@@ -24789,21 +24785,21 @@
       },
       {
         "key": "C",
-        "text": "All records from the right table, and the matched records from the left table are returned"
+        "text": "NULL values are filled for unmatched rows from the left"
       },
       {
         "key": "D",
-        "text": "All records from both tables are returned"
+        "text": "NULL values are filled for unmatched rows from the right"
       }
     ],
     "correctAnswer": "C",
-    "explanation": "RIGHT JOIN (hoặc RIGHT OUTER JOIN) trả về tất cả các bản ghi từ bảng bên phải (right table), và các bản ghi khớp từ bảng bên trái (left table). Đối với các bản ghi ở bảng bên phải không có dữ liệu khớp ở bảng bên trái, kết quả sẽ trả về giá trị NULL cho các cột của bảng bên trái. Do đó, phương án C là mô tả chính xác nhất.",
+    "explanation": "Khi thực hiện `RIGHT JOIN`, toàn bộ các bản ghi của bảng bên phải (right table) được giữ lại; với những dòng không có bản ghi khớp ở bảng bên trái (left table), các cột của bảng bên trái sẽ được điền giá trị `NULL` (Đáp án C).",
     "imageFileName": "314.png",
     "imagePath": "/SEMESTER_3_DBI202/314.png",
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-06T00:00:00Z",
-    "updatedAt": "2026-11-11T11:56:45.330Z"
+    "updatedAt": "2026-11-17T03:40:00.659Z"
   },
   {
     "id": "DBI202-Q298",
@@ -27216,7 +27212,7 @@
       },
       {
         "key": "D",
-        "text": "Group ZORU"
+        "text": "Group"
       }
     ],
     "correctAnswer": "D",
@@ -27226,7 +27222,7 @@
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-06T00:00:00Z",
-    "updatedAt": "2026-11-11T11:56:45.332Z"
+    "updatedAt": "2026-11-17T03:40:00.659Z"
   },
   {
     "id": "DBI202-Q367",
