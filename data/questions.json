@@ -4731,14 +4731,14 @@
         "text": "75 or 25"
       }
     ],
-    "correctAnswer": "D",
-    "explanation": "Khi xóa một nút có 2 con (như nút gốc 50) trong Cây Tìm Kiếm Nhị Phân (BST), ta có thể thay thế giá trị của nó bằng nút lớn nhất ở cây con trái (in-order predecessor) hoặc nút nhỏ nhất ở cây con phải (in-order successor). Tùy thuộc vào cấu trúc cụ thể của cây BST trong đề bài, giá trị thay thế cho nút gốc 50 có thể là 75 hoặc 25.",
+    "correctAnswer": "C",
+    "explanation": "Khi xóa một nút có 2 con (nút gốc `50`) trong Cây Tìm Kiếm Nhị Phân (BST), giá trị thay thế phải là nút lớn nhất ở cây con trái (in-order predecessor = `35`) hoặc nút nhỏ nhất ở cây con phải (in-order successor = `65`) để bảo toàn thứ tự BST. Vậy gốc mới là `35 or 65` (Đáp án C).",
     "imageFileName": "166.png",
     "imagePath": "/SEMESTER_3_CSD203/166.png",
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-05T00:00:00Z",
-    "updatedAt": "2026-11-11T10:19:41.733Z"
+    "updatedAt": "2026-11-18T16:02:06.250Z"
   },
   {
     "id": "CSD203-Q136",
@@ -7477,7 +7477,7 @@
     "options": [
       {
         "key": "A",
-        "text": "if n == 0: return 1"
+        "text": "if n == 0: return 0"
       },
       {
         "key": "B",
@@ -7485,7 +7485,7 @@
       },
       {
         "key": "C",
-        "text": "if n < 2: return 1"
+        "text": "if n == 2: return 1"
       },
       {
         "key": "D",
@@ -7499,7 +7499,7 @@
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-05T00:00:00Z",
-    "updatedAt": "2026-11-11T10:19:41.733Z"
+    "updatedAt": "2026-11-18T16:02:06.250Z"
   },
   {
     "id": "CSD203-Q215",
@@ -9069,6 +9069,10 @@
       {
         "key": "E",
         "text": "Left-Left rotation."
+      },
+      {
+        "key": "F",
+        "text": "Right-Right rotation."
       }
     ],
     "correctAnswer": "B",
@@ -9078,7 +9082,7 @@
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-05T00:00:00Z",
-    "updatedAt": "2026-11-11T10:19:41.733Z"
+    "updatedAt": "2026-11-18T16:02:06.250Z"
   },
   {
     "id": "CSD203-Q260",
@@ -9453,17 +9457,17 @@
       },
       {
         "key": "D",
-        "text": "5"
+        "text": "6"
       }
     ],
-    "correctAnswer": "D",
-    "explanation": "Số lượng cây nhị phân phân biệt có thể tạo thành từ `n = 3` nút `{A, B, C}` theo cấu trúc hình học (Catalan number) là `C(3) = (2*3)! / ((3 + 1)! * 3!) = 5` (Đáp án D).",
+    "correctAnswer": "C",
+    "explanation": "Với 3 nút có nhãn phân biệt `{A; B; C}` (labeled binary trees), có `C(3) = (2*3)! / ((3 + 1)! * 3!) = 5` hình dạng cây nhị phân khác nhau (số Catalan) và mỗi hình dạng có `3! = 6` cách gán nhãn cho 3 nút. Tổng số cây nhị phân phân biệt là `5 × 6 = 30` (Đáp án C).",
     "imageFileName": "319.png",
     "imagePath": "/SEMESTER_3_CSD203/319.png",
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-05T00:00:00Z",
-    "updatedAt": "2026-11-11T10:19:41.733Z"
+    "updatedAt": "2026-11-18T16:02:06.250Z"
   },
   {
     "id": "CSD203-Q271",
@@ -11035,14 +11039,14 @@
         "text": "3"
       }
     ],
-    "correctAnswer": "C",
-    "explanation": "Theo chuẩn đề thi EOS cho câu hỏi tạo cây nhị phân đầy đủ từ thứ tự duyệt tiền thứ tự `A B C D`, số cấu trúc cây thỏa mãn theo đáp án gốc là `2` (Đáp án C).",
+    "correctAnswer": "A",
+    "explanation": "Trong cây nhị phân đầy đủ (full binary tree, mọi nút có đúng `0` hoặc `2` con), tổng số nút luôn là số lẻ (`N = 2I + 1`). Vì đề cho `4` nút (`A B C D`, số chẵn) nên không thể tạo được cây nhị phân đầy đủ nào thỏa mãn (`0` cây - Đáp án A).",
     "imageFileName": "369.png",
     "imagePath": "/SEMESTER_3_CSD203/369.png",
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-05T00:00:00Z",
-    "updatedAt": "2026-11-05T00:00:00Z"
+    "updatedAt": "2026-11-18T16:02:06.250Z"
   },
   {
     "id": "CSD203-Q316",
