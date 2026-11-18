@@ -6,7 +6,7 @@
 
 | Mã môn | Số lượng câu hỏi | Ghi chú hình ảnh |
 | --- | ---: | --- |
-| **CSD203** | 409 | — |
+| **CSD203** | 409 | Slide đính kèm (`SEMESTER_3_CSD203/`) |
 | **DBI202** | 374 | Slide đính kèm (`SEMESTER_3_DBI202/`) |
 | **IAO202** | 316 | Slide đính kèm (`SEMESTER_3_IAO202/`) |
 | **NWC303** | 269 | — |
@@ -36,6 +36,7 @@ Toàn bộ tiến độ học tập và lịch sử bài thi được lưu trự
 Website-FE-Semester3_IA/
 ├── data/
 │   └── questions.json        # Ngân hàng 1,594 câu hỏi cho 5 môn học
+├── SEMESTER_3_CSD203/        # 409 ảnh slide môn CSD203
 ├── SEMESTER_3_DBI202/        # 374 ảnh slide môn DBI202
 ├── SEMESTER_3_IAO202/        # 316 ảnh slide môn IAO202
 ├── index.html                # Giao diện chính ứng dụng
