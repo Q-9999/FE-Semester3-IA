@@ -9,8 +9,8 @@
 | **CSD203** | 409 | Slide đính kèm (`SEMESTER_3_CSD203/`) |
 | **DBI202** | 374 | Slide đính kèm (`SEMESTER_3_DBI202/`) |
 | **IAO202** | 316 | Slide đính kèm (`SEMESTER_3_IAO202/`) |
-| **NWC303** | 269 | — |
-| **JPD113** | 226 | — |
+| **NWC303** | 269 | Slide đính kèm (`SEMESTER_3_NWC303/`) |
+| **JPD113** | 226 | Slide đính kèm (`SEMESTER_3_JPD113/`) |
 | **Tổng cộng** | **1,594** | |
 
 ## Tính năng chính
@@ -39,6 +39,8 @@ Website-FE-Semester3_IA/
 ├── SEMESTER_3_CSD203/        # 409 ảnh slide môn CSD203
 ├── SEMESTER_3_DBI202/        # 374 ảnh slide môn DBI202
 ├── SEMESTER_3_IAO202/        # 316 ảnh slide môn IAO202
+├── SEMESTER_3_NWC303/        # 269 ảnh slide môn NWC303
+├── SEMESTER_3_JPD113/        # 226 ảnh slide môn JPD113
 ├── index.html                # Giao diện chính ứng dụng
 ├── style.css                 # Stylesheet
 ├── app.js                    # Logic ứng dụng frontend
