@@ -36306,14 +36306,14 @@
         "text": "Email Security Appliance"
       }
     ],
-    "correctAnswer": "ACF",
-    "explanation": "Theo đáp án của slide môn NWC303 (030.jpg), ba sản phẩm của Cisco được chọn cho giải pháp bảo mật endpoint là:\n- A: NAC Appliance\n- C: SSL/IPsec VPN Appliance\n- F: Email Security Appliance (Đáp án ACF).",
+    "correctAnswer": "AEF",
+    "explanation": "Đáp án đúng chuẩn Cisco NetAcad (Topic 10.1.3): A, E, F. Ba giải pháp bảo mật thiết bị đầu cuối (endpoint security) của Cisco là NAC Appliance (A), Web Security Appliance - WSA (E) và Email Security Appliance - ESA (F). Các thiết bị ASA (B), SSL/IPsec VPN Appliance (C) và IPS Sensor Appliance (D) tập trung bảo vệ hạ tầng mạng doanh nghiệp chứ không phải endpoint. (Lưu ý: Ghi chú ACF ở cuối slide 030.jpg bị nhầm C thay vì E).",
     "imageFileName": "030.jpg",
     "imagePath": "/SEMESTER_3_NWC303/030.jpg",
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-07T00:00:00.000Z",
-    "updatedAt": "2026-11-19T13:44:14.164Z"
+    "updatedAt": "2026-11-20T09:48:47.810Z"
   },
   {
     "id": "NWC303-Q024",
@@ -45728,7 +45728,7 @@
     "subjectName": "Information Assurance Operations",
     "topic": "CIA Triad & Information Security Fundamentals",
     "difficulty": "Medium",
-    "questionText": "Which three operations are provided by TCP but not by UDP? (Choose three.)",
+    "questionText": "Which two operations are provided by TCP but not by UDP? (Choose two.)",
     "codeSnippet": "",
     "options": [
       {
@@ -45752,14 +45752,14 @@
         "text": "tracking individual conversations"
       }
     ],
-    "correctAnswer": "ABC",
-    "explanation": "TCP (Transmission Control Protocol) là giao thức hướng kết nối và tin cậy, cung cấp các tính năng mà UDP không có như: gửi lại các gói tin chưa được xác nhận (A), gửi xác nhận đã nhận dữ liệu (B), và sắp xếp lại các phân đoạn dữ liệu theo đúng thứ tự gửi ban đầu (C). Cả TCP và UDP đều sử dụng các số cổng để xác định ứng dụng (D) và theo dõi các cuộc hội thoại (E).",
+    "correctAnswer": "AB",
+    "explanation": "Đáp án đúng chuẩn Cisco NetAcad (Topic 9.1.4) & slide 030.jpg: A, B. TCP cung cấp độ tin cậy thông qua việc đánh số thứ tự phân đoạn, xác nhận dữ liệu đã nhận (B) và truyền lại dữ liệu chưa được xác nhận (A). Lựa chọn C (reconstructing data in the order received - ghép dữ liệu theo đúng thứ tự nhận được mà không sắp xếp lại theo sequence number) là đặc điểm của UDP chứ không phải TCP.",
     "imageFileName": "030.jpg",
     "imagePath": "/SEMESTER_3_IAO202/030.jpg",
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-07T00:00:00.000Z",
-    "updatedAt": "2026-11-11T15:09:03.517Z"
+    "updatedAt": "2026-11-20T09:48:47.810Z"
   },
   {
     "id": "IAO202-Q021",
@@ -47020,14 +47020,14 @@
         "text": "Use wireless MAC address filtering."
       }
     ],
-    "correctAnswer": "BC",
-    "explanation": "BYOD (Bring Your Own Device) mang lại rủi ro lớn vì thiết bị cá nhân có thể chứa mã độc hoặc không được kiểm soát chặt chẽ. Để giảm thiểu rủi ro này, các biện pháp tốt nhất bao gồm:\n- Đáp án B: Cập nhật hệ điều hành (OS) và phần mềm giúp vá các lỗ hổng bảo mật, ngăn chặn hacker khai thác thiết bị để xâm nhập vào mạng doanh nghiệp.\n- Đáp án C: Việc chỉ cho phép các thiết bị đã được phê duyệt (thông qua các giải pháp như MDM - Mobile Device Management hoặc Whitelisting) giúp đảm bảo chỉ những thiết bị đáp ứng tiêu chuẩn bảo mật của công ty mới được phép truy cập tài nguyên.\n\nLoại trừ các phương án khác:\n- A và E: Là các biện pháp bảo mật vật lý nhằm ngăn chặn rò rỉ tín hiệu không dây ra bên ngoài tòa nhà, không tập trung vào quản lý rủi ro từ thiết bị cá nhân.\n- D: Chỉ là một thói quen sử dụng của người dùng, không phải là một biện pháp kiểm soát bảo mật hệ thống chuyên nghiệp.\n- F: Lọc địa chỉ MAC (MAC filtering) rất yếu vì địa chỉ MAC có thể dễ dàng bị giả mạo (spoofing) và không giải quyết được vấn đề thiết bị chứa mã độc.",
+    "correctAnswer": "BD",
+    "explanation": "Đáp án đúng chuẩn Cisco NetAcad (Topic 18.2.3) & ghi chú slide 063.jpg: B, D. Các thực tiễn bảo mật tốt nhất để giảm thiểu rủi ro BYOD bao gồm: luôn cập nhật hệ điều hành và phần mềm trên thiết bị (B), và chỉ bật Wi-Fi/Bluetooth khi đang sử dụng mạng không dây đáng tin cậy (D).",
     "imageFileName": "063.jpg",
     "imagePath": "/SEMESTER_3_IAO202/063.jpg",
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-07T00:00:00.000Z",
-    "updatedAt": "2026-11-11T15:09:03.517Z"
+    "updatedAt": "2026-11-20T09:48:47.810Z"
   },
   {
     "id": "IAO202-Q053",
@@ -47429,7 +47429,7 @@
     "subjectName": "Information Assurance Operations",
     "topic": "CIA Triad & Information Security Fundamentals",
     "difficulty": "Medium",
-    "questionText": "Which three operations are provided by TCP but not by UDP? (Choose three.)",
+    "questionText": "Which two operations are provided by TCP but not by UDP? (Choose two.)",
     "codeSnippet": "",
     "options": [
       {
@@ -47453,14 +47453,14 @@
         "text": "tracking individual conversations"
       }
     ],
-    "correctAnswer": "ABC",
-    "explanation": "TCP là giao thức hướng kết nối cung cấp cơ chế truyền tin cậy bao gồm: gửi lại các dữ liệu chưa được xác nhận (retransmitting any unacknowledged data), xác nhận dữ liệu đã nhận (acknowledging received data), và tái cấu trúc (sắp xếp) dữ liệu theo đúng thứ tự đã nhận (reconstructing data in the order received). Trong khi đó, UDP là giao thức không hướng kết nối và không tin cậy nên không cung cấp ba tính năng này. Cả TCP và UDP đều định danh ứng dụng bằng số cổng (port) và theo dõi các cuộc hội thoại riêng lẻ.",
+    "correctAnswer": "AB",
+    "explanation": "Đáp án đúng chuẩn Cisco NetAcad (Topic 9.1.4) & slide 074.jpg: A, B. TCP cung cấp độ tin cậy thông qua việc đánh số thứ tự phân đoạn, xác nhận dữ liệu đã nhận (B) và truyền lại dữ liệu chưa được xác nhận (A). Lựa chọn C (reconstructing data in the order received) là đặc điểm của UDP chứ không phải TCP.",
     "imageFileName": "074.jpg",
     "imagePath": "/SEMESTER_3_IAO202/074.jpg",
     "speakerNote": "Hai choc näng nao TCP có nhung UDP không có?",
     "status": "verified",
     "createdAt": "2026-11-07T00:00:00.000Z",
-    "updatedAt": "2026-11-11T15:09:03.517Z"
+    "updatedAt": "2026-11-20T09:48:47.810Z"
   },
   {
     "id": "IAO202-Q064",
@@ -49449,14 +49449,14 @@
         "text": "Internal router"
       }
     ],
-    "correctAnswer": "C",
-    "explanation": "Trong chiến lược phòng thủ chiều sâu (defense-in-depth), Firewall (Tường lửa) thường được triển khai tại biên của mạng để đóng vai trò là lớp phòng thủ đầu tiên. Nó kiểm soát lưu lượng truy cập ra vào mạng dựa trên các quy tắc bảo mật đã được thiết lập để ngăn chặn các truy cập trái phép từ bên ngoài. Các thiết bị như Edge router chủ yếu điều phối định tuyến, trong khi Access layer switch và Internal router nằm ở các lớp sâu hơn bên trong kiến trúc mạng.",
+    "correctAnswer": "B",
+    "explanation": "Đáp án đúng chuẩn Cisco NetAcad (Topic 18.1.4): B (Edge router). Trong mô hình phòng thủ theo chiều sâu (layered defense-in-depth), các bộ định tuyến biên (Edge router - B) nằm ở rìa mạng là tuyến phòng thủ đầu tiên (first line of defense), sau đó mới chuyển lưu lượng vào Firewall (C - tuyến phòng thủ thứ hai, như ở câu IAO202-Q197). (Lưu ý: Ghi chú C ở cuối slide 132.jpg bị nhầm giữa tuyến phòng thủ thứ nhất và thứ hai).",
     "imageFileName": "132.jpg",
     "imagePath": "/SEMESTER_3_IAO202/132.jpg",
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-07T00:00:00.000Z",
-    "updatedAt": "2026-11-11T15:09:03.518Z"
+    "updatedAt": "2026-11-20T09:48:47.810Z"
   },
   {
     "id": "IAO202-Q120",
@@ -50374,7 +50374,7 @@
     "subjectName": "Information Assurance Operations",
     "topic": "CIA Triad & Information Security Fundamentals",
     "difficulty": "Medium",
-    "questionText": "When a user makes changes to the settings of a Windows system, where are these changes stored? Hoäng Hoäng",
+    "questionText": "When a user makes changes to the settings of a Windows system, where are these changes stored?",
     "codeSnippet": "",
     "options": [
       {
@@ -50401,7 +50401,7 @@
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-07T00:00:00.000Z",
-    "updatedAt": "2026-11-11T15:11:05.957Z"
+    "updatedAt": "2026-11-20T09:48:47.810Z"
   },
   {
     "id": "IAO202-Q147",
@@ -50604,14 +50604,14 @@
         "text": "hacktivist"
       }
     ],
-    "correctAnswer": "D",
-    "explanation": "Hacktivist là những kẻ tấn công có mục tiêu gây gián đoạn dịch vụ vì lý do chính trị hoặc xã hội, thường sử dụng các công cụ tấn công phổ biến như DDoS.",
+    "correctAnswer": "B",
+    "explanation": "Đáp án đúng chuẩn Cisco NetAcad (Topic 1.2.1): B (amateur). Theo tài liệu CyberOps Associate Topic 1.2.1, những kẻ tấn công sử dụng các công cụ hack phổ biến có sẵn (common security hack tool) để gây gián đoạn mạng mà không xuất phát từ mục đích phản đối chính trị/xã hội được phân loại là Amateur / Script Kiddies (B). Hacktivist (D) chỉ dùng khi cuộc tấn công nhằm phản đối vì một mục tiêu chính trị hoặc xã hội cụ thể. (Lưu ý: Ghi chú D ở cuối slide 165.jpg bị sai so với chuẩn NetAcad).",
     "imageFileName": "165.jpg",
     "imagePath": "/SEMESTER_3_IAO202/165.jpg",
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-07T00:00:00.000Z",
-    "updatedAt": "2026-11-11T15:11:05.957Z"
+    "updatedAt": "2026-11-20T09:48:47.810Z"
   },
   {
     "id": "IAO202-Q153",
@@ -54011,14 +54011,14 @@
         "text": "It detects and stops potential direct attacks but does not scan for malware."
       }
     ],
-    "correctAnswer": "C",
-    "explanation": "Hệ thống phát hiện xâm nhập trên máy trạm (`HIDS`) theo dõi hoạt động hệ thống để nhận diện tấn công tiềm ẩn và gửi cảnh báo, nhưng ở chế độ IDS nó chỉ phát hiện và cảnh báo chứ không chủ động chặn lưu lượng (`does not stop the traffic`). Đáp án đúng là C.",
+    "correctAnswer": "A",
+    "explanation": "Đáp án đúng chuẩn Cisco NetAcad (CyberOps Module 11 - Topic 11.1.7): A. Theo chuẩn NetAcad, một hệ thống HIDS hiện đại là ứng dụng bảo mật toàn diện chạy trực tiếp trên máy chủ (agent-based), kết hợp chức năng của phần mềm chống mã độc (antimalware) với bảo vệ tường lửa (firewall protection), vừa phát hiện vừa ngăn mã độc thực thi. Lựa chọn C mô tả hệ thống NIDS thụ động trên mạng. (Lưu ý: Ghi chú C ở cuối slide 264.jpg bị nhầm sang NIDS).",
     "imageFileName": "264.jpg",
     "imagePath": "/SEMESTER_3_IAO202/264.jpg",
     "speakerNote": "",
     "status": "verified",
     "createdAt": "2026-11-07T00:00:00.000Z",
-    "updatedAt": "2026-11-11T15:17:12.524Z"
+    "updatedAt": "2026-11-20T09:48:47.810Z"
   },
   {
     "id": "IAO202-Q250",
@@ -54061,7 +54061,7 @@
     "subjectName": "Information Assurance Operations",
     "topic": "Defense in Depth & Network Security",
     "difficulty": "Medium",
-    "questionText": "What is a characteristic of the security artichoke, defense-in-depth approach? Hoäng Hoäng",
+    "questionText": "What is a characteristic of the security artichoke, defense-in-depth approach?",
     "codeSnippet": "",
     "options": [
       {
@@ -54081,14 +54081,14 @@
         "text": "Each layer has to be penetrated before the threat actor can reach the target data or system."
       }
     ],
-    "correctAnswer": "D",
-    "explanation": "Déc diém cüa mö hinh båo met \"security artichoke / defense-in-depth\" lä gi?",
+    "correctAnswer": "B",
+    "explanation": "Đáp án đúng chuẩn Cisco NetAcad (Topic 18.1.5): B. Trong phép ẩn dụ 'cây atisô bảo mật' (security artichoke) đối với mạng không biên giới hiện đại, kẻ tấn công không còn phải bóc từng lớp từ ngoài vào trong như 'củ hành bảo mật' (security onion - đáp án D) mà mỗi lớp lá bên ngoài đều có thể bị bóc trực tiếp để tiếp cận tài nguyên. (Lưu ý: Ghi chú D ở cuối slide 266.jpg bị nhầm giữa security artichoke và security onion).",
     "imageFileName": "266.jpg",
     "imagePath": "/SEMESTER_3_IAO202/266.jpg",
     "speakerNote": "Déc diém cüa mö hinh båo met \"security artichoke / defense-in-depth\" lä gi?",
     "status": "verified",
     "createdAt": "2026-11-07T00:00:00.000Z",
-    "updatedAt": "2026-11-07T00:00:00.000Z"
+    "updatedAt": "2026-11-20T09:48:47.810Z"
   },
   {
     "id": "IAO202-Q252",
@@ -55319,7 +55319,7 @@
       },
       {
         "key": "D",
-        "text": "It is the advisory notice from a vulnerability research center e HOdng Hoang"
+        "text": "It is the advisory notice from a vulnerability research center"
       }
     ],
     "correctAnswer": "A",
@@ -55329,7 +55329,7 @@
     "speakerNote": "Môn học IAO202 (Information Assurance Operations). Đáp án đúng: A.",
     "status": "verified",
     "createdAt": "2026-11-07T00:00:00.000Z",
-    "updatedAt": "2026-11-07T00:00:00.000Z"
+    "updatedAt": "2026-11-20T09:48:47.810Z"
   },
   {
     "id": "IAO202-Q287",
@@ -55354,7 +55354,7 @@
       },
       {
         "key": "D",
-        "text": "It is an open source Linux security distribution containing many penetration tools. e HOdng Hoang"
+        "text": "It is an open source Linux security distribution containing many penetration tools."
       }
     ],
     "correctAnswer": "D",
@@ -55364,7 +55364,7 @@
     "speakerNote": "Tai sao Kali Linux phö bién trong viec kiém thü' båo met mang cüa td ch&c?",
     "status": "verified",
     "createdAt": "2026-11-07T00:00:00.000Z",
-    "updatedAt": "2026-11-07T00:00:00.000Z"
+    "updatedAt": "2026-11-20T09:48:47.810Z"
   },
   {
     "id": "IAO202-Q288",
