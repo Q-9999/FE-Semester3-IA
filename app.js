@@ -195,6 +195,34 @@
       return { label: 'Trung bình', cls: 'diff-medium' };
     }
 
+    static renderFixSourceBadge(q) {
+      if (!q || !q.fixSource) return '';
+      const tip = q.fixSourceNote || 'Đã hiệu chỉnh đáp án chuẩn so với tài liệu Source gốc';
+      return `<button type="button" class="fix-source-pill" data-fixnote="${Utils.escapeHtml(tip)}" title="${Utils.escapeHtml(tip)}">Fix-Source</button>`;
+    }
+
+    static renderFixSourceBanner(q) {
+      if (!q || !q.fixSource || !q.fixSourceNote) return '';
+      return `<div class="fix-source-banner"><strong>Fix-Source:</strong> ${Utils.escapeHtml(q.fixSourceNote)}</div>`;
+    }
+
+    static showToast(message) {
+      if (!message) return;
+      let toast = document.getElementById('appFloatingToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'appFloatingToast';
+        toast.className = 'fix-source-toast';
+        document.body.appendChild(toast);
+      }
+      toast.innerText = String(message);
+      toast.classList.add('visible');
+      clearTimeout(toast._hideTimer);
+      toast._hideTimer = setTimeout(() => {
+        toast.classList.remove('visible');
+      }, 4200);
+    }
+
     static formatTimeMmSs(totalSeconds) {
       const sec = Math.max(0, Math.floor(totalSeconds));
       const m = Math.floor(sec / 60);
@@ -421,7 +449,9 @@
           explanation: item.explanation ? String(item.explanation) : '',
           imageFileName: item.imageFileName || '',
           imagePath: item.imagePath || '',
-          speakerNote: item.speakerNote || ''
+          speakerNote: item.speakerNote || '',
+          fixSource: Boolean(item.fixSource),
+          fixSourceNote: item.fixSourceNote ? String(item.fixSourceNote) : ''
         };
       });
 
@@ -930,12 +960,14 @@
       });
 
       let expHtml = '';
-      if ((q.explanation || q.speakerNote) && isRevealed) {
+      if ((q.explanation || q.speakerNote || (q.fixSource && q.fixSourceNote)) && isRevealed) {
+        const fixBanner = Utils.renderFixSourceBanner(q);
         const noteBlock = q.speakerNote
           ? `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(43, 147, 72, 0.25); font-size: 13px; color: var(--text-muted);"><strong>Ghi chú Slide:</strong> ${Utils.escapeHtml(q.speakerNote)}</div>`
           : '';
         expHtml = `
           <div class="explanation-box">
+            ${fixBanner}
             <div class="exp-text">
               <strong>Giải thích:</strong> ${q.explanation ? Utils.formatExplanation(q.explanation) : 'Xem đáp án được đánh dấu ở trên.'}
             </div>
@@ -952,6 +984,7 @@
             ${q.isMultiple ? `<span class="tag-badge" style="background: #fef3c7; color: #b45309;">Chọn ${requiredCount} đáp án</span>` : ''}
             <span class="topic-pill-tag">${Utils.escapeHtml(q.topic)}</span>
             <span class="diff-pill ${diffMeta.cls}">${diffMeta.label}</span>
+            ${Utils.renderFixSourceBadge(q)}
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
             <span style="font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">${Utils.escapeHtml(q.id)}</span>
@@ -1834,8 +1867,9 @@
         }).join('');
 
         const codeHtml = q.codeSnippet ? Utils.renderCodeTerminal(q.codeSnippet, q.subject) : '';
-        const expHtml = q.explanation
-          ? `<div class="explanation-box"><div class="exp-text"><strong>Giải thích:</strong> ${Utils.formatExplanation(q.explanation)}</div></div>`
+        const fixBanner = Utils.renderFixSourceBanner(q);
+        const expHtml = (q.explanation || fixBanner)
+          ? `<div class="explanation-box">${fixBanner}<div class="exp-text"><strong>Giải thích:</strong> ${q.explanation ? Utils.formatExplanation(q.explanation) : 'Xem đáp án được đánh dấu ở trên.'}</div></div>`
           : '';
 
         card.innerHTML = `
@@ -1844,6 +1878,7 @@
               <span class="study-qnum">Câu ${idx + 1}</span>
               <span class="tag-badge">${Utils.escapeHtml(q.subject)}</span>
               ${statusTag}
+              ${Utils.renderFixSourceBadge(q)}
             </div>
             <span style="font-size: 12px; color: var(--text-muted);">${Utils.escapeHtml(q.id)}</span>
           </div>
@@ -2189,16 +2224,17 @@
             return `
               <div class="study-card" style="margin-bottom: 14px;">
                 <div class="study-card-header">
-                  <div>
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     <span class="study-qnum">Câu ${idx + 1}</span>
                     <span class="tag-badge">${Utils.escapeHtml(q.subject)}</span>
+                    ${Utils.renderFixSourceBadge(q)}
                   </div>
                   <span style="font-size: 12px; color: var(--text-muted);">${Utils.escapeHtml(q.id)}</span>
                 </div>
                 <div style="font-weight: 600; margin: 8px 0;">${Utils.formatQuestionText(q.questionText)}</div>
                 ${det.userText ? `<div style="color: var(--correct-red); font-size: 13.5px; margin-bottom: 4px;">✗ Bạn chọn: ${Utils.escapeHtml(det.userText)}</div>` : '<div style="color: #b45309; font-size: 13.5px; margin-bottom: 4px;">• Bỏ qua chưa chọn</div>'}
                 <div style="color: var(--exp-green); font-size: 13.5px; font-weight: 600;">✓ Đáp án đúng: ${Utils.escapeHtml(correctDisplay)}</div>
-                ${q.explanation ? `<div class="explanation-box" style="margin-top: 8px;"><div class="exp-text">${Utils.formatExplanation(q.explanation)}</div></div>` : ''}
+                ${(q.explanation || q.fixSourceNote) ? `<div class="explanation-box" style="margin-top: 8px;">${Utils.renderFixSourceBanner(q)}<div class="exp-text">${q.explanation ? Utils.formatExplanation(q.explanation) : ''}</div></div>` : ''}
               </div>
             `;
           }).join('');
@@ -2520,6 +2556,7 @@
 
       const answerSection = this.flipped ? `
         <div class="explanation-box" style="margin-top: 8px;">
+          ${Utils.renderFixSourceBanner(q)}
           <div style="font-weight: 700; color: var(--exp-green); margin-bottom: 6px;">
             Đáp án đúng: ${Utils.escapeHtml(correctDisplay)}
           </div>
@@ -2536,6 +2573,7 @@
               <span class="tag-badge">${Utils.escapeHtml(q.subject)}</span>
               <span class="topic-pill-tag">${Utils.escapeHtml(q.topic)}</span>
               <span class="diff-pill ${diffMeta.cls}">${diffMeta.label}</span>
+              ${Utils.renderFixSourceBadge(q)}
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <span class="dash-bench-tag">${this.flipped ? 'Mặt sau • Đáp án' : 'Mặt trước • Câu hỏi'}</span>
@@ -3307,6 +3345,21 @@
             const isHidden = panel.style.display === 'none';
             panel.style.display = isHidden ? 'block' : 'none';
             slideBtn.innerText = isHidden ? 'Ẩn Slide' : 'Xem Slide gốc';
+          }
+          return;
+        }
+        const fixBtn = e.target.closest('.fix-source-pill');
+        if (fixBtn) {
+          e.stopPropagation();
+          const note = fixBtn.getAttribute('data-fixnote') || '';
+          Utils.showToast(note);
+          const card = fixBtn.closest('.study-card, .fc-card');
+          const expBox = card ? card.querySelector('.explanation-box') : null;
+          if (expBox) {
+            expBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            expBox.classList.remove('fix-source-pulse');
+            void expBox.offsetWidth;
+            expBox.classList.add('fix-source-pulse');
           }
         }
       });
