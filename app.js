@@ -91,7 +91,7 @@
       navigator.clipboard.writeText(text).then(() => {
         if (btnElement) {
           const orig = btnElement.innerText;
-          btnElement.innerText = 'Đã chép!';
+          btnElement.innerText = 'Đã chép';
           setTimeout(() => { btnElement.innerText = orig; }, 1400);
         }
       }).catch(() => {});
@@ -101,13 +101,17 @@
       if (!navigator.clipboard || !navigator.clipboard.writeText) return;
       navigator.clipboard.writeText(text).then(() => {
         const span = btn.querySelector('span');
-        if (span) span.innerText = 'Đã sao chép!';
-        btn.style.color = '#22c55e';
+        if (span) span.innerText = 'Đã sao chép';
+        btn.style.color = 'var(--sem-green)';
         setTimeout(() => {
           if (span) span.innerText = 'Sao chép';
           btn.style.color = '';
         }, 1600);
       }).catch(() => {});
+    }
+
+    static renderStarIcon(isStarred) {
+      return `<svg width="16" height="16" viewBox="0 0 24 24" fill="${isStarred ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
     }
 
     static highlightCodeSyntax(escapedText) {
@@ -124,14 +128,9 @@
       return `
         <div class="cisco-terminal-box">
           <div class="terminal-topbar">
-            <div class="terminal-dots">
-              <span class="dot dot-red"></span>
-              <span class="dot dot-yellow"></span>
-              <span class="dot dot-green"></span>
-            </div>
             <span class="terminal-title">${Utils.escapeHtml(langTitle)}</span>
             <button type="button" class="btn-copy-cli" data-cli="${Utils.escapeHtml(raw)}">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
               <span>Sao chép</span>
             </button>
           </div>
@@ -772,6 +771,7 @@
     setSubject(subjectKey) {
       this.currentSubject = subjectKey || 'all';
       this.topicFilter = 'ALL';
+      this.activeQuestionIndex = 0;
       this.populateTopicSelect();
       this.updateHeaderMeta();
       this.render();
@@ -779,11 +779,13 @@
 
     setSearch(query) {
       this.searchQuery = String(query || '').trim().toLowerCase();
+      this.activeQuestionIndex = 0;
       this.render();
     }
 
     toggleStarredOnly(forceState = null) {
       this.starredOnly = forceState !== null ? Boolean(forceState) : !this.starredOnly;
+      this.activeQuestionIndex = 0;
       const btn = document.getElementById('filterStarredOnlyBtn');
       if (btn) {
         btn.classList.toggle('active', this.starredOnly);
@@ -807,7 +809,7 @@
       const titleEl = document.getElementById('studyModuleTitle');
       const descEl = document.getElementById('studyModuleDesc');
       if (titleEl) titleEl.innerText = info.name;
-      if (descEl) descEl.innerText = `${count} câu hỏi trắc nghiệm & giải thích chi tiết (${info.short}).`;
+      if (descEl) descEl.innerText = `${count} câu hỏi trắc nghiệm và giải thích chi tiết (${info.short})`;
     }
 
     getFilteredQuestions() {
@@ -842,6 +844,9 @@
       if (!listEl) return;
 
       this.currentFilteredList = this.getFilteredQuestions();
+      if (this.activeQuestionIndex >= this.currentFilteredList.length) {
+        this.activeQuestionIndex = 0;
+      }
       this.renderedCount = 0;
       listEl.innerHTML = '';
 
@@ -853,9 +858,9 @@
 
       if (this.currentFilteredList.length === 0) {
         listEl.innerHTML = `
-          <div class="study-card" style="text-align: center; padding: 2.5rem 1.5rem;">
-            <h3 style="margin-bottom: 0.5rem;">Không tìm thấy câu hỏi phù hợp</h3>
-            <p style="color: var(--text-muted); margin-bottom: 1rem;">Thử thay đổi từ khóa tìm kiếm, chủ đề, độ khó hoặc tắt bộ lọc "Đã lưu".</p>
+          <div class="study-card" style="text-align: center; padding: 32px 24px;">
+            <h3 style="margin-bottom: 8px; font-weight: 600;">Không tìm thấy câu hỏi phù hợp</h3>
+            <p style="color: var(--text-muted);">Thử thay đổi từ khóa tìm kiếm, chủ đề, độ khó hoặc tắt bộ lọc "Đã lưu"</p>
           </div>
         `;
         this.updateStudyNavRail();
@@ -887,9 +892,9 @@
       if (this.renderedCount < this.currentFilteredList.length) {
         const wrap = document.createElement('div');
         wrap.id = 'studyLoadMoreContainer';
-        wrap.style.cssText = 'text-align: center; margin: 24px 0 36px;';
+        wrap.style.cssText = 'text-align: center; margin: 24px 0 32px;';
         wrap.innerHTML = `
-          <button type="button" class="btn btn-outline" id="btnStudyLoadMore" style="padding: 10px 24px; font-weight: 600;">
+          <button type="button" class="btn btn-outline" id="btnStudyLoadMore">
             Tải thêm câu hỏi (${this.renderedCount} / ${this.currentFilteredList.length})
           </button>
         `;
@@ -904,9 +909,113 @@
       }
     }
 
+    setActiveQuestion(index, scrollIntoView = false) {
+      if (index < 0 || index >= this.currentFilteredList.length) return;
+      this.activeQuestionIndex = index;
+      while (this.renderedCount <= index && this.renderedCount < this.currentFilteredList.length) {
+        this.renderNextBatch();
+      }
+      document.querySelectorAll('#studyQuestionsList .study-card.is-active-card').forEach((el) => {
+        el.classList.remove('is-active-card');
+      });
+      const q = this.currentFilteredList[index];
+      const targetCard = q ? document.querySelector(`#studyQuestionsList .study-card[data-id="${q.id}"]`) : null;
+      if (targetCard) {
+        targetCard.classList.add('is-active-card');
+        if (scrollIntoView) {
+          targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+      const railGrid = document.getElementById('studyNavRailGrid');
+      if (railGrid) {
+        railGrid.querySelectorAll('.rail-qbtn').forEach((b, i) => {
+          b.classList.toggle('active-target', i === index);
+        });
+      }
+    }
+
+    navigateQuestion(delta) {
+      if (this.currentFilteredList.length === 0) return;
+      const nextIdx = Math.max(0, Math.min(this.currentFilteredList.length - 1, this.activeQuestionIndex + delta));
+      this.setActiveQuestion(nextIdx, true);
+    }
+
+    selectOptionByIndex(optIdx) {
+      if (this.currentFilteredList.length === 0) return false;
+      const idx = Math.max(0, Math.min(this.currentFilteredList.length - 1, this.activeQuestionIndex));
+      const q = this.currentFilteredList[idx];
+      if (!q || !Array.isArray(q.options) || optIdx < 0 || optIdx >= q.options.length) return false;
+
+      if (!this.selfTestMode) {
+        this.selfTestMode = true;
+        const toggleInterBtn = document.getElementById('toggleInteractiveBtn');
+        if (toggleInterBtn) {
+          toggleInterBtn.classList.add('active');
+          toggleInterBtn.innerText = 'Chế độ: Tự kiểm tra';
+        }
+        this.activeQuestionIndex = idx;
+        this.render();
+      }
+
+      while (this.renderedCount <= idx && this.renderedCount < this.currentFilteredList.length) {
+        this.renderNextBatch();
+      }
+
+      const targetOpt = q.options[optIdx];
+      const chosenKey = String(targetOpt.key || String.fromCharCode(65 + optIdx)).trim().toUpperCase();
+      this.handleOptionChoice(q, idx, chosenKey);
+      this.setActiveQuestion(idx, true);
+      return true;
+    }
+
+    handleOptionChoice(q, index, chosenKey, cardEl = null) {
+      const rawPicked = this.selfSelectedMap.get(q.id);
+      const pickedKeys = Array.isArray(rawPicked) ? rawPicked : (rawPicked ? [rawPicked] : []);
+      const requiredCount = q.correctKeys?.length || 1;
+      const isRevealed = q.isMultiple ? pickedKeys.length >= requiredCount : pickedKeys.length > 0;
+
+      let nextKeys;
+      if (q.isMultiple) {
+        if (isRevealed) {
+          nextKeys = [chosenKey];
+        } else if (pickedKeys.includes(chosenKey)) {
+          nextKeys = pickedKeys.filter((k) => k !== chosenKey);
+        } else {
+          nextKeys = [...pickedKeys, chosenKey];
+        }
+      } else {
+        nextKeys = [chosenKey];
+      }
+
+      if (nextKeys.length === 0) {
+        this.selfSelectedMap.delete(q.id);
+      } else {
+        this.selfSelectedMap.set(q.id, nextKeys);
+      }
+
+      const nowRevealed = q.isMultiple ? nextKeys.length >= requiredCount : nextKeys.length > 0;
+      if (nowRevealed) {
+        const isOk = ExamDataStore.isOptionSetCorrect(q, nextKeys);
+        this.dataStore.markAttempted([q.id]);
+        this.dataStore.recordDailyActivity([q.id]);
+        if (isOk) {
+          this.dataStore.removeMistake(q.id);
+        } else {
+          this.dataStore.addMistake(q.id);
+        }
+        this.app.updateBadges();
+      }
+
+      const targetCard = cardEl || document.querySelector(`#studyQuestionsList .study-card[data-id="${q.id}"]`);
+      if (targetCard) {
+        const replacement = this.createQuestionCard(q, index);
+        targetCard.replaceWith(replacement);
+      }
+    }
+
     createQuestionCard(q, index) {
       const card = document.createElement('div');
-      card.className = 'study-card';
+      card.className = index === this.activeQuestionIndex ? 'study-card is-active-card' : 'study-card';
       card.dataset.id = q.id;
       card.dataset.qindex = index;
 
@@ -928,7 +1037,6 @@
         const isPicked = pickedKeys.includes(letter);
         let cls = 'study-option';
         let badge = '';
-        let pendingStyle = '';
 
         if (this.selfTestMode) {
           cls += ' interactive-opt';
@@ -941,8 +1049,8 @@
               badge = '<span class="study-option-badge badge-red">Bạn chọn (Sai)</span>';
             }
           } else if (isPicked) {
-            pendingStyle = ' style="border-color: var(--primary); background: var(--primary-light);"';
-            badge = `<span class="study-option-badge" style="color: var(--primary); background: rgba(29, 114, 184, 0.14);">Đã chọn (${pickedKeys.length}/${requiredCount})</span>`;
+            cls += ' is-selected-pending';
+            badge = `<span class="study-option-badge badge-pending">Đã chọn (${pickedKeys.length}/${requiredCount})</span>`;
           }
         } else if (opt.isCorrect && !this.hideAnswers) {
           cls += ' correct';
@@ -950,7 +1058,7 @@
         }
 
         optsHtml += `
-          <div class="${cls}" data-optkey="${letter}"${pendingStyle}>
+          <div class="${cls}" data-optkey="${letter}">
             <span class="option-indicator">${letter}</span>
             <div style="flex: 1;">${Utils.escapeHtml(opt.text)}</div>
             ${badge}
@@ -963,13 +1071,13 @@
       if ((q.explanation || q.speakerNote || (q.fixSource && q.fixSourceNote)) && isRevealed) {
         const fixBanner = Utils.renderFixSourceBanner(q);
         const noteBlock = q.speakerNote
-          ? `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(43, 147, 72, 0.25); font-size: 13px; color: var(--text-muted);"><strong>Ghi chú Slide:</strong> ${Utils.escapeHtml(q.speakerNote)}</div>`
+          ? `<div class="exp-note-meta"><strong>Ghi chú Slide:</strong> ${Utils.escapeHtml(q.speakerNote)}</div>`
           : '';
         expHtml = `
           <div class="explanation-box">
             ${fixBanner}
             <div class="exp-text">
-              <strong>Giải thích:</strong> ${q.explanation ? Utils.formatExplanation(q.explanation) : 'Xem đáp án được đánh dấu ở trên.'}
+              <strong>Giải thích:</strong> ${q.explanation ? Utils.formatExplanation(q.explanation) : 'Xem đáp án được đánh dấu ở trên'}
             </div>
             ${noteBlock}
           </div>
@@ -978,23 +1086,23 @@
 
       card.innerHTML = `
         <div class="study-card-header">
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <div class="study-card-meta-left">
             <span class="study-qnum">Câu ${index + 1}</span>
             <span class="tag-badge">${Utils.escapeHtml(q.subject)}</span>
-            ${q.isMultiple ? `<span class="tag-badge" style="background: #fef3c7; color: #b45309;">Chọn ${requiredCount} đáp án</span>` : ''}
+            ${q.isMultiple ? `<span class="tag-badge badge-amber">Chọn ${requiredCount} đáp án</span>` : ''}
             <span class="topic-pill-tag">${Utils.escapeHtml(q.topic)}</span>
             <span class="diff-pill ${diffMeta.cls}">${diffMeta.label}</span>
             ${Utils.renderFixSourceBadge(q)}
           </div>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <span style="font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">${Utils.escapeHtml(q.id)}</span>
-            <button type="button" class="btn-star ${isStarred ? 'starred' : ''}" title="${isStarred ? 'Bỏ lưu câu này' : 'Lưu câu này'}">
-              ${isStarred ? '★' : '☆'}
+          <div class="study-card-meta-right">
+            <span class="question-id-mono">${Utils.escapeHtml(q.id)}</span>
+            <button type="button" class="btn-star ${isStarred ? 'starred' : ''}" title="${isStarred ? 'Bỏ lưu câu này' : 'Lưu câu này'}" aria-label="${isStarred ? 'Bỏ lưu câu này' : 'Lưu câu này'}">
+              ${Utils.renderStarIcon(isStarred)}
             </button>
           </div>
         </div>
 
-        <div style="font-size: 15.5px; font-weight: 600; margin: 12px 0; line-height: 1.65;">
+        <div class="question-stem">
           ${Utils.formatQuestionText(q.questionText)}
         </div>
 
@@ -1004,6 +1112,12 @@
         ${expHtml}
       `;
 
+      card.addEventListener('click', () => {
+        if (this.activeQuestionIndex !== index) {
+          this.setActiveQuestion(index, false);
+        }
+      });
+
       // Bind bookmark star
       const starBtn = card.querySelector('.btn-star');
       if (starBtn) {
@@ -1011,7 +1125,7 @@
           e.stopPropagation();
           const starred = this.dataStore.toggleStar(q.id);
           starBtn.classList.toggle('starred', starred);
-          starBtn.innerText = starred ? '★' : '☆';
+          starBtn.innerHTML = Utils.renderStarIcon(starred);
           this.app.updateBadges();
           this.updateStudyNavRail();
         };
@@ -1032,41 +1146,7 @@
             if (e.target.closest('.copy-btn')) return;
             const chosenKey = String(optEl.getAttribute('data-optkey') || '').trim().toUpperCase();
             if (!chosenKey) return;
-
-            let nextKeys;
-            if (q.isMultiple) {
-              if (isRevealed) {
-                nextKeys = [chosenKey];
-              } else if (pickedKeys.includes(chosenKey)) {
-                nextKeys = pickedKeys.filter((k) => k !== chosenKey);
-              } else {
-                nextKeys = [...pickedKeys, chosenKey];
-              }
-            } else {
-              nextKeys = [chosenKey];
-            }
-
-            if (nextKeys.length === 0) {
-              this.selfSelectedMap.delete(q.id);
-            } else {
-              this.selfSelectedMap.set(q.id, nextKeys);
-            }
-
-            const nowRevealed = q.isMultiple ? nextKeys.length >= requiredCount : nextKeys.length > 0;
-            if (nowRevealed) {
-              const isOk = ExamDataStore.isOptionSetCorrect(q, nextKeys);
-              this.dataStore.markAttempted([q.id]);
-              this.dataStore.recordDailyActivity([q.id]);
-              if (isOk) {
-                this.dataStore.removeMistake(q.id);
-              } else {
-                this.dataStore.addMistake(q.id);
-              }
-              this.app.updateBadges();
-            }
-
-            const replacement = this.createQuestionCard(q, index);
-            card.replaceWith(replacement);
+            this.handleOptionChoice(q, index, chosenKey, card);
           };
         });
       }
@@ -1083,7 +1163,6 @@
       if (railCount) railCount.innerText = total;
       railGrid.innerHTML = '';
 
-      // Cap displayed grid buttons smoothly for huge sets (>300) if needed, or render efficiently
       const frag = document.createDocumentFragment();
       this.currentFilteredList.forEach((q, idx) => {
         const btn = document.createElement('button');
@@ -1096,20 +1175,7 @@
 
         btn.onclick = (e) => {
           e.stopPropagation();
-          this.activeQuestionIndex = idx;
-          while (this.renderedCount <= idx && this.renderedCount < this.currentFilteredList.length) {
-            this.renderNextBatch();
-          }
-          const targetCard = document.querySelector(`#studyQuestionsList .study-card[data-id="${q.id}"]`);
-          if (targetCard) {
-            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            targetCard.classList.remove('pulse-focus');
-            void targetCard.offsetWidth;
-            targetCard.classList.add('pulse-focus');
-            setTimeout(() => targetCard.classList.remove('pulse-focus'), 1400);
-          }
-          railGrid.querySelectorAll('.rail-qbtn').forEach((b) => b.classList.remove('active-target'));
-          btn.classList.add('active-target');
+          this.setActiveQuestion(idx, true);
         };
         frag.appendChild(btn);
       });
@@ -1524,6 +1590,51 @@
       this.renderGrid();
     }
 
+    selectOptionByIndex(optIdx) {
+      if (!this.activeExam || this.activeExam.submitted) return false;
+      const q = this.activeExam.questions[this.activeExam.currentIndex];
+      if (!q || !Array.isArray(q.displayOptions)) return false;
+      if (optIdx < 0 || optIdx >= q.displayOptions.length) return false;
+
+      const opt = q.displayOptions[optIdx];
+      const isPractice = this.activeExam.mode === 'practice';
+      const isRevealed = isPractice && this.activeExam.revealedIds.has(q.id);
+      const requiredCount = q.correctKeys?.length || 1;
+
+      if (q.isMultiple) {
+        let current = Array.isArray(this.activeExam.userAnswers[q.id])
+          ? [...this.activeExam.userAnswers[q.id]]
+          : [];
+        if (isRevealed) {
+          this.activeExam.revealedIds.delete(q.id);
+          current = [opt];
+        } else if (current.some((a) => a.key === opt.key)) {
+          current = current.filter((a) => a.key !== opt.key);
+        } else {
+          current.push(opt);
+        }
+        if (current.length === 0) {
+          delete this.activeExam.userAnswers[q.id];
+        } else {
+          this.activeExam.userAnswers[q.id] = current;
+        }
+        if (isPractice && current.length >= requiredCount) {
+          this.revealPracticeAnswer(q);
+          return true;
+        }
+      } else {
+        this.activeExam.userAnswers[q.id] = opt;
+        if (isPractice) {
+          this.revealPracticeAnswer(q);
+          return true;
+        }
+      }
+
+      this.renderCurrentQuestion();
+      this.renderGrid();
+      return true;
+    }
+
     renderCurrentQuestion() {
       if (!this.activeExam) return;
       const q = this.activeExam.questions[this.activeExam.currentIndex];
@@ -1539,7 +1650,7 @@
 
       const requiredCount = q.correctKeys?.length || 1;
       if (titleEl) titleEl.innerText = `${idx + 1}. ${q.topic || 'Question'}`;
-      if (tagEl) tagEl.innerText = `${q.subject} • ${q.isMultiple ? `Chọn ${requiredCount} đáp án • ` : ''}1 pt`;
+      if (tagEl) tagEl.innerText = `${q.subject} · ${q.isMultiple ? `Chọn ${requiredCount} đáp án · ` : ''}1 pt`;
       if (textEl) textEl.innerHTML = Utils.formatQuestionText(q.questionText);
       if (codeEl) codeEl.innerHTML = q.codeSnippet ? Utils.renderCodeTerminal(q.codeSnippet, q.subject) : '';
 
@@ -1566,6 +1677,10 @@
           let cls = 'exam-option-label';
           let badgeHtml = '';
 
+          if (isChecked) {
+            cls += ' is-selected';
+          }
+
           if (isRevealed) {
             if (opt.isCorrect) {
               cls += ' practice-opt-correct';
@@ -1577,6 +1692,8 @@
           }
 
           label.className = cls;
+          label.dataset.optindex = String(optIdx);
+          label.dataset.displetter = dispLetter;
           label.innerHTML = `
             <input type="${inputType}" name="exam_opt_${q.id}" class="exam-option-input" value="${Utils.escapeHtml(opt.key)}" ${isChecked ? 'checked' : ''}>
             <span class="option-indicator">${dispLetter}</span>
@@ -1589,32 +1706,7 @@
           const input = label.querySelector('input');
           if (input) {
             input.onchange = () => {
-              if (q.isMultiple) {
-                let current = Array.isArray(this.activeExam.userAnswers[q.id])
-                  ? [...this.activeExam.userAnswers[q.id]]
-                  : [];
-                if (input.checked) {
-                  if (!current.some((a) => a.key === opt.key)) current.push(opt);
-                } else {
-                  current = current.filter((a) => a.key !== opt.key);
-                }
-                if (current.length === 0) {
-                  delete this.activeExam.userAnswers[q.id];
-                } else {
-                  this.activeExam.userAnswers[q.id] = current;
-                }
-                if (isPractice && (isRevealed || current.length >= requiredCount)) {
-                  this.revealPracticeAnswer(q);
-                  return;
-                }
-              } else {
-                this.activeExam.userAnswers[q.id] = opt;
-                if (isPractice) {
-                  this.revealPracticeAnswer(q);
-                  return;
-                }
-              }
-              this.renderGrid();
+              this.selectOptionByIndex(optIdx);
             };
           }
           optsEl.appendChild(label);
@@ -1635,12 +1727,12 @@
       if (fbEl) {
         if (isRevealed) {
           const isOk = this.isQuestionCorrect(q);
-          const expHtml = q.explanation ? Utils.formatExplanation(q.explanation) : 'Đáp án đúng đã được đánh dấu trực tiếp ở trên.';
+          const expHtml = q.explanation ? Utils.formatExplanation(q.explanation) : 'Đáp án đúng đã được đánh dấu trực tiếp ở trên';
           fbEl.style.display = 'block';
           fbEl.innerHTML = `
             <div class="instant-fb-banner ${isOk ? 'fb-correct' : 'fb-wrong'}">
-              <strong>${isOk ? 'Chính xác!' : 'Chưa chính xác'}</strong>
-              <span>• Giải thích chi tiết ngay sau câu trả lời</span>
+              <strong>${isOk ? 'Chính xác' : 'Chưa chính xác'}</strong>
+              <span>Giải thích chi tiết ngay sau câu trả lời</span>
             </div>
             <div class="explanation-box" style="margin-top: 8px;">
               <div class="exp-text">${expHtml}</div>
@@ -1663,7 +1755,9 @@
       const nextBtn = document.getElementById('btnNextQuestion');
       if (prevBtn) prevBtn.disabled = idx === 0;
       if (nextBtn) {
-        nextBtn.innerText = idx >= this.activeExam.questions.length - 1 ? 'Kiểm tra & Nộp' : 'Câu tiếp theo';
+        nextBtn.innerHTML = idx >= this.activeExam.questions.length - 1
+          ? 'Kiểm tra &amp; Nộp <kbd class="kbd-hint">→</kbd>'
+          : 'Câu tiếp theo <kbd class="kbd-hint">→</kbd>';
       }
     }
 
@@ -1814,7 +1908,7 @@
       const barEl = document.getElementById('scoreScaleBarFill');
       if (barEl) {
         barEl.style.width = `${pct}%`;
-        barEl.style.background = passed ? 'var(--exp-green)' : 'var(--correct-red)';
+        barEl.style.background = passed ? 'var(--sem-green)' : 'var(--sem-red)';
       }
 
       const retryWrongBtn = document.getElementById('btnRetryWrongOnly');
@@ -1836,10 +1930,10 @@
         card.className = 'study-card';
 
         const statusTag = !isAns
-          ? '<span class="tag-badge" style="background: #fef3c7; color: #b45309;">Bỏ qua</span>'
+          ? '<span class="tag-badge badge-amber">Bỏ qua</span>'
           : isCorrect
-          ? '<span class="tag-badge" style="background: #dcfce7; color: #15803d;">Đúng</span>'
-          : '<span class="tag-badge" style="background: #fee2e2; color: #b91c1c;">Sai</span>';
+          ? '<span class="tag-badge badge-green">Đúng</span>'
+          : '<span class="tag-badge badge-red">Sai</span>';
 
         const optsHtml = q.displayOptions.map((opt, optIdx) => {
           const letter = String.fromCharCode(65 + optIdx);
@@ -1869,20 +1963,20 @@
         const codeHtml = q.codeSnippet ? Utils.renderCodeTerminal(q.codeSnippet, q.subject) : '';
         const fixBanner = Utils.renderFixSourceBanner(q);
         const expHtml = (q.explanation || fixBanner)
-          ? `<div class="explanation-box">${fixBanner}<div class="exp-text"><strong>Giải thích:</strong> ${q.explanation ? Utils.formatExplanation(q.explanation) : 'Xem đáp án được đánh dấu ở trên.'}</div></div>`
+          ? `<div class="explanation-box">${fixBanner}<div class="exp-text"><strong>Giải thích:</strong> ${q.explanation ? Utils.formatExplanation(q.explanation) : 'Xem đáp án được đánh dấu ở trên'}</div></div>`
           : '';
 
         card.innerHTML = `
           <div class="study-card-header">
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div class="study-card-meta-left">
               <span class="study-qnum">Câu ${idx + 1}</span>
               <span class="tag-badge">${Utils.escapeHtml(q.subject)}</span>
               ${statusTag}
               ${Utils.renderFixSourceBadge(q)}
             </div>
-            <span style="font-size: 12px; color: var(--text-muted);">${Utils.escapeHtml(q.id)}</span>
+            <span class="question-id-mono">${Utils.escapeHtml(q.id)}</span>
           </div>
-          <div style="font-size: 15.5px; font-weight: 600; margin: 12px 0; line-height: 1.6;">
+          <div class="question-stem">
             ${Utils.formatQuestionText(q.questionText)}
           </div>
           ${codeHtml}
@@ -2213,7 +2307,7 @@
 
       if (bodyEl) {
         if (this.modalWrongQuestions.length === 0) {
-          bodyEl.innerHTML = '<p style="text-align:center; color: var(--text-muted); padding: 2rem;">Không có câu sai nào trong lần thi này!</p>';
+          bodyEl.innerHTML = '<p style="text-align:center; color: var(--text-muted); padding: 24px;">Không có câu sai nào trong lần thi này</p>';
         } else {
           bodyEl.innerHTML = this.modalWrongQuestions.map((q, idx) => {
             const det = wrongDetails[idx] || {};
@@ -2222,18 +2316,18 @@
               ? correctOpts.map((o) => `${o.key}. ${o.text}`).join(' | ')
               : (det.correctText || '');
             return `
-              <div class="study-card" style="margin-bottom: 14px;">
+              <div class="study-card" style="margin-bottom: 12px;">
                 <div class="study-card-header">
-                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <div class="study-card-meta-left">
                     <span class="study-qnum">Câu ${idx + 1}</span>
                     <span class="tag-badge">${Utils.escapeHtml(q.subject)}</span>
                     ${Utils.renderFixSourceBadge(q)}
                   </div>
-                  <span style="font-size: 12px; color: var(--text-muted);">${Utils.escapeHtml(q.id)}</span>
+                  <span class="question-id-mono">${Utils.escapeHtml(q.id)}</span>
                 </div>
-                <div style="font-weight: 600; margin: 8px 0;">${Utils.formatQuestionText(q.questionText)}</div>
-                ${det.userText ? `<div style="color: var(--correct-red); font-size: 13.5px; margin-bottom: 4px;">✗ Bạn chọn: ${Utils.escapeHtml(det.userText)}</div>` : '<div style="color: #b45309; font-size: 13.5px; margin-bottom: 4px;">• Bỏ qua chưa chọn</div>'}
-                <div style="color: var(--exp-green); font-size: 13.5px; font-weight: 600;">✓ Đáp án đúng: ${Utils.escapeHtml(correctDisplay)}</div>
+                <div class="question-stem" style="margin: 8px 0 12px;">${Utils.formatQuestionText(q.questionText)}</div>
+                ${det.userText ? `<div style="color: var(--sem-red-text); font-size: 13px; margin-bottom: 4px;">Bạn chọn: ${Utils.escapeHtml(det.userText)}</div>` : '<div style="color: var(--sem-amber-text); font-size: 13px; margin-bottom: 4px;">Bỏ qua chưa chọn</div>'}
+                <div style="color: var(--sem-green-text); font-size: 13px; font-weight: 500;">Đáp án đúng: ${Utils.escapeHtml(correctDisplay)}</div>
                 ${(q.explanation || q.fixSourceNote) ? `<div class="explanation-box" style="margin-top: 8px;">${Utils.renderFixSourceBanner(q)}<div class="exp-text">${q.explanation ? Utils.formatExplanation(q.explanation) : ''}</div></div>` : ''}
               </div>
             `;
@@ -2268,8 +2362,8 @@
 
       if (tests.length === 0) {
         listEl.innerHTML = `
-          <div class="study-card" style="text-align: center; padding: 2rem;">
-            <p style="color: var(--text-muted);">Chưa có đề thi tùy chỉnh nào. Hãy cấu hình bên trái và nhấn <strong>Tạo &amp; bắt đầu làm đề</strong>.</p>
+          <div class="study-card" style="text-align: center; padding: 32px;">
+            <p style="color: var(--text-muted);">Chưa có đề thi tùy chỉnh nào. Hãy cấu hình bên trái và nhấn <strong>Tạo &amp; bắt đầu làm đề</strong></p>
           </div>
         `;
         return;
@@ -2289,10 +2383,10 @@
         const wrongNum = latest?.wrongQuestions ? latest.wrongQuestions.length : Math.max(0, totalQ - curCorrect);
 
         const histRows = historyItems.map((h) => `
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--border-color); font-size: 13px;">
-            <span><strong>Lần ${h.turn}</strong> • ${Utils.escapeHtml(h.date)}</span>
+          <div class="fetest-hist-row">
+            <span><strong>Lần ${h.turn}</strong> · ${Utils.escapeHtml(h.date)}</span>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <strong style="color: ${h.scorePct >= 75 ? 'var(--exp-green)' : 'var(--correct-red)'};">${h.scorePct}% (${h.correctCount}/${h.totalCount})</strong>
+              <strong style="color: ${h.scorePct >= 75 ? 'var(--sem-green-text)' : 'var(--sem-red-text)'}; font-weight: 600;">${h.scorePct}% (${h.correctCount}/${h.totalCount})</strong>
               ${h.wrongQuestions && h.wrongQuestions.length > 0 ? `<button type="button" class="btn btn-outline btn-xs btn-view-turn-mistakes" data-turn="${h.turn}">Xem sai (${h.wrongQuestions.length})</button>` : ''}
             </div>
           </div>
@@ -2304,23 +2398,23 @@
               <div class="fetest-card-title">${Utils.escapeHtml(test.title)}</div>
               <div class="fetest-card-meta">
                 <span>Số câu: <strong>${totalQ}</strong></span>
-                <span>•</span>
+                <span>·</span>
                 <span>Thời gian: <strong>${test.durationMinutes === 0 ? 'Không giới hạn' : `${test.durationMinutes || 60}p`}</strong></span>
-                ${hasHist ? `<span>•</span><span style="color: var(--primary); font-weight: 600;">${historyItems.length || 1} lượt</span>` : ''}
+                ${hasHist ? `<span>·</span><span style="color: var(--primary); font-weight: 500;">${historyItems.length || 1} lượt</span>` : ''}
               </div>
             </div>
             <div class="fetest-actions">
               ${hasHist
-                ? `<span class="tag-badge" style="background: ${isPassed ? '#dcfce7' : '#fee2e2'}; color: ${isPassed ? '#15803d' : '#b91c1c'};">${isPassed ? 'Đạt' : 'Chưa đạt'}: ${curPct}%</span>`
-                : '<span class="tag-badge" style="background: #fef3c7; color: #b45309;">Chưa làm</span>'}
+                ? `<span class="tag-badge ${isPassed ? 'badge-green' : 'badge-red'}">${isPassed ? 'Đạt' : 'Chưa đạt'}: ${curPct}%</span>`
+                : '<span class="tag-badge badge-amber">Chưa làm</span>'}
               ${test.questionIds && test.questionIds.length > 0 ? `<button type="button" class="btn btn-primary btn-sm btn-start-fetest">${hasHist ? 'Làm lại' : 'Làm bài'}</button>` : ''}
-              ${hasHist ? `<button type="button" class="btn btn-outline btn-sm btn-toggle-history">Lịch sử (${historyItems.length || 1}) ▾</button>` : ''}
+              ${hasHist ? `<button type="button" class="btn btn-outline btn-sm btn-toggle-history">Lịch sử (${historyItems.length || 1})</button>` : ''}
               ${hasHist && wrongNum > 0 && latest?.wrongQuestions?.length > 0 ? `<button type="button" class="btn btn-warning btn-sm btn-view-latest-mistakes">Xem câu sai (${wrongNum})</button>` : ''}
               <button type="button" class="btn btn-outline btn-sm btn-delete-fetest">Xóa</button>
             </div>
           </div>
-          <div class="fetest-history-dropdown" style="display: none; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border-color);">
-            ${histRows || '<div style="font-size: 12.5px; color: var(--text-muted);">Chưa có lượt thi chi tiết.</div>'}
+          <div class="fetest-history-dropdown" style="display: none;">
+            ${histRows || '<div style="font-size: 12px; color: var(--text-muted);">Chưa có lượt thi chi tiết</div>'}
           </div>
         `;
 
@@ -2471,7 +2565,9 @@
 
       window.addEventListener('keydown', (e) => {
         if (this.app.activeMode !== 'flashcards') return;
-        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (document.querySelector('.modal-overlay.open')) return;
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target?.isContentEditable) return;
         if (e.code === 'Space') {
           e.preventDefault();
           this.toggleFlip();
@@ -2529,8 +2625,8 @@
         if (counter) counter.innerText = 'Thẻ 0 / 0';
         if (fill) fill.style.width = '0%';
         host.innerHTML = `
-          <div class="study-card" style="text-align: center; padding: 3rem 1.5rem;">
-            <p style="color: var(--text-muted);">Không có thẻ nào khớp với bộ lọc hiện tại.</p>
+          <div class="study-card" style="text-align: center; padding: 32px 24px;">
+            <p style="color: var(--text-muted);">Không có thẻ nào khớp với bộ lọc hiện tại</p>
           </div>
         `;
         return;
@@ -2557,11 +2653,11 @@
       const answerSection = this.flipped ? `
         <div class="explanation-box" style="margin-top: 8px;">
           ${Utils.renderFixSourceBanner(q)}
-          <div style="font-weight: 700; color: var(--exp-green); margin-bottom: 6px;">
+          <div style="font-weight: 600; color: var(--sem-green-text); margin-bottom: 6px;">
             Đáp án đúng: ${Utils.escapeHtml(correctDisplay)}
           </div>
           <div class="exp-text">
-            ${q.explanation ? Utils.formatExplanation(q.explanation) : 'Chưa có giải thích bổ sung.'}
+            ${q.explanation ? Utils.formatExplanation(q.explanation) : 'Chưa có giải thích bổ sung'}
           </div>
         </div>
       ` : '';
@@ -2569,19 +2665,19 @@
       host.innerHTML = `
         <div class="fc-card ${this.flipped ? 'fc-flipped' : ''}">
           <div class="fc-card-head">
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div class="study-card-meta-left">
               <span class="tag-badge">${Utils.escapeHtml(q.subject)}</span>
               <span class="topic-pill-tag">${Utils.escapeHtml(q.topic)}</span>
               <span class="diff-pill ${diffMeta.cls}">${diffMeta.label}</span>
               ${Utils.renderFixSourceBadge(q)}
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="dash-bench-tag">${this.flipped ? 'Mặt sau • Đáp án' : 'Mặt trước • Câu hỏi'}</span>
-              <button type="button" class="btn-star ${isStarred ? 'starred' : ''}" id="fcStarBtn" title="Lưu sao">${isStarred ? '★' : '☆'}</button>
+            <div class="study-card-meta-right">
+              <span class="dash-bench-tag">${this.flipped ? 'Mặt sau · Đáp án' : 'Mặt trước · Câu hỏi'}</span>
+              <button type="button" class="btn-star ${isStarred ? 'starred' : ''}" id="fcStarBtn" title="Lưu sao" aria-label="Lưu sao">${Utils.renderStarIcon(isStarred)}</button>
             </div>
           </div>
           <div class="fc-card-body">
-            <div style="font-size: 1.08rem; font-weight: 600; line-height: 1.6;">
+            <div class="fc-question-text">
               ${Utils.formatQuestionText(q.questionText)}
             </div>
             ${q.codeSnippet ? Utils.renderCodeTerminal(q.codeSnippet, q.subject) : ''}
@@ -2610,7 +2706,7 @@
           e.stopPropagation();
           const st = this.dataStore.toggleStar(q.id);
           starBtn.classList.toggle('starred', st);
-          starBtn.innerText = st ? '★' : '☆';
+          starBtn.innerHTML = Utils.renderStarIcon(st);
           this.app.updateBadges();
         };
       }
@@ -2671,14 +2767,14 @@
 
       if (summaryEl) {
         summaryEl.innerText = list.length > 0
-          ? `Bạn hiện có ${list.length} câu hỏi cần ôn tập lại.`
-          : 'Tuyệt vời! Bạn chưa có câu hỏi nào làm sai.';
+          ? `Bạn hiện có ${list.length} câu hỏi cần ôn tập lại`
+          : 'Bạn chưa có câu hỏi nào làm sai';
       }
 
       listEl.innerHTML = '';
       if (list.length === 0) {
         listEl.innerHTML = `
-          <div class="study-card" style="text-align: center; padding: 2.5rem 1.5rem;">
+          <div class="study-card" style="text-align: center; padding: 32px 24px;">
             <p style="color: var(--text-muted);">Chưa có câu sai nào được ghi nhận. Các câu trả lời sai khi làm bài thi hoặc tự kiểm tra sẽ tự động lưu tại đây.</p>
           </div>
         `;
@@ -2980,7 +3076,7 @@
 
       if (!points || points.length === 0) {
         if (deltaEl) deltaEl.innerText = '--';
-        box.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem;">Hoàn thành ít nhất 1 bài thi để hiển thị biểu đồ xu hướng điểm.</div>';
+        box.innerHTML = '<div style="text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 13px;">Hoàn thành ít nhất 1 bài thi để hiển thị biểu đồ xu hướng điểm</div>';
         return;
       }
 
@@ -2989,7 +3085,7 @@
         if (points.length >= 2) {
           const diff = last - (points[points.length - 2].pct * 10);
           deltaEl.innerText = `${diff >= 0 ? '+' : ''}${diff} pts`;
-          deltaEl.style.color = diff >= 0 ? 'var(--exp-green)' : 'var(--correct-red)';
+          deltaEl.style.color = diff >= 0 ? 'var(--sem-green-text)' : 'var(--sem-red-text)';
         } else {
           deltaEl.innerText = `${last} pts`;
         }
@@ -3016,13 +3112,13 @@
 
       box.innerHTML = `
         <svg viewBox="0 0 ${W} ${H}" class="dash-trend-svg">
-          <line x1="${padX}" y1="${passY}" x2="${W - padX}" y2="${passY}" stroke="#10b981" stroke-dasharray="4 4" stroke-width="1"/>
-          <text x="${W - padX}" y="${passY - 4}" text-anchor="end" fill="#10b981" font-size="9.5" font-weight="600">PASS (750)</text>
-          ${coords.length > 1 ? `<polygon points="${areaPoints}" fill="rgba(29, 114, 184, 0.12)"/>` : ''}
-          ${coords.length > 1 ? `<polyline points="${polyPoints}" fill="none" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+          <line x1="${padX}" y1="${passY}" x2="${W - padX}" y2="${passY}" stroke="var(--sem-green)" stroke-dasharray="4 4" stroke-width="1"/>
+          <text x="${W - padX}" y="${passY - 4}" text-anchor="end" fill="var(--sem-green-text)" font-size="10" font-weight="500">Pass 750</text>
+          ${coords.length > 1 ? `<polygon points="${areaPoints}" fill="var(--primary-light)"/>` : ''}
+          ${coords.length > 1 ? `<polyline points="${polyPoints}" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
           ${coords.map((c) => `
-            <circle cx="${c.x}" cy="${c.y}" r="4" fill="${c.pt >= 750 ? '#10b981' : '#ef4444'}" stroke="var(--bg-card)" stroke-width="1.5"/>
-            <text x="${c.x}" y="${H - 8}" text-anchor="middle" fill="var(--text-muted)" font-size="9.5">L${c.idx} (${c.pt})</text>
+            <circle cx="${c.x}" cy="${c.y}" r="4" fill="${c.pt >= 750 ? 'var(--sem-green)' : 'var(--sem-red)'}" stroke="var(--bg-card)" stroke-width="1.5"/>
+            <text x="${c.x}" y="${H - 8}" text-anchor="middle" fill="var(--text-muted)" font-size="10">L${c.idx} (${c.pt})</text>
           `).join('')}
         </svg>
       `;
@@ -3364,18 +3460,63 @@
         }
       });
 
-      // Keyboard shortcuts: Ctrl+B (Sidebar), Ctrl+K (Search), Ctrl+Enter (Submit Exam)
+      // Keyboard shortcuts: Ctrl+B (Sidebar), Ctrl+K (Search), Ctrl+Enter (Submit Exam),
+      // A-H (Select option), ArrowLeft / ArrowRight (Prev / Next question)
       window.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
           e.preventDefault();
           toggleSidebar();
-        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+          return;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
           e.preventDefault();
           if (searchInput) searchInput.focus();
-        } else if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          return;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
           if (this.activeMode === 'exam' && this.examController.activeExam && !this.examController.activeExam.submitted) {
             e.preventDefault();
             this.examController.openSubmitModal();
+          }
+          return;
+        }
+
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (document.querySelector('.modal-overlay.open')) return;
+
+        const target = e.target;
+        const tag = target?.tagName;
+        if (target?.isContentEditable || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        if (tag === 'INPUT') {
+          const inputType = (target.type || '').toLowerCase();
+          if (!['radio', 'checkbox', 'button'].includes(inputType)) return;
+        }
+
+        if (this.activeMode === 'exam' && this.examController.activeExam && !this.examController.activeExam.submitted) {
+          if (/^[a-hA-H]$/.test(e.key)) {
+            const optIdx = e.key.toUpperCase().charCodeAt(0) - 65;
+            e.preventDefault();
+            this.examController.selectOptionByIndex(optIdx);
+          } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            if (target?.classList?.contains('exam-option-input')) target.blur();
+            this.examController.nextQuestion();
+          } else if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            if (target?.classList?.contains('exam-option-input')) target.blur();
+            this.examController.prevQuestion();
+          }
+        } else if (this.activeMode === 'study' && this.studyController.currentFilteredList.length > 0) {
+          if (/^[a-hA-H]$/.test(e.key)) {
+            const optIdx = e.key.toUpperCase().charCodeAt(0) - 65;
+            e.preventDefault();
+            this.studyController.selectOptionByIndex(optIdx);
+          } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            this.studyController.navigateQuestion(1);
+          } else if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            this.studyController.navigateQuestion(-1);
           }
         }
       });

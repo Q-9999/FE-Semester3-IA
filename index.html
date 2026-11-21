@@ -17,8 +17,8 @@
   <link rel="stylesheet" href="/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231d72b8'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231d63b8'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
 </head>
 <body>
   <!-- ========================================================
@@ -27,7 +27,7 @@
   <header class="app-topbar">
     <div class="topbar-inner">
       <button class="btn-sidebar-toggle" id="sidebarToggleBtn" title="Thu gọn / Mở rộng Sidebar (Ctrl + B)" aria-label="Thu gọn / Mở rộng Sidebar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <rect width="18" height="18" x="3" y="3" rx="2"/>
           <path d="M9 3v18"/>
           <path d="m14 9 3 3-3 3"/>
@@ -38,7 +38,7 @@
         <div class="brand-badge">FU3</div>
         <div class="brand-info">
           <div class="brand-title">FU-EOS Kỳ 3</div>
-          <div class="brand-sub">5 Môn • 1,594 Câu Hỏi</div>
+          <div class="brand-sub">5 môn · 1,594 câu hỏi</div>
         </div>
       </div>
 
@@ -69,15 +69,16 @@
       <!-- Quick Action Tools -->
       <div class="topbar-actions">
         <div class="search-box-wrapper">
-          <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          <input type="text" id="searchInput" class="search-input" placeholder="Tìm kiếm (Ctrl + K)...">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="searchInput" class="search-input" placeholder="Tìm kiếm">
+          <kbd class="kbd-hint search-kbd" aria-hidden="true">Ctrl K</kbd>
         </div>
         <button class="btn btn-outline btn-sm topbar-tool-btn" id="starredBtn" title="Xem danh sách câu đã lưu">
           Đã lưu (<span id="starredCount">0</span>)
         </button>
         <button class="btn btn-outline btn-sm" id="themeToggleBtn" title="Chuyển chế độ Sáng / Tối">Tối</button>
         <button class="btn-icon mobile-menu-btn" id="mobileSidebarToggle" title="Mở danh mục Môn học" aria-label="Mở danh mục Môn học">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </button>
       </div>
     </div>
@@ -96,11 +97,11 @@
     <aside class="app-sidebar" id="appSidebar">
       <div class="sidebar-header">
         <div class="sidebar-title-group">
-          <div class="sidebar-section-title">Danh mục Môn học</div>
-          <div class="sidebar-section-sub" id="sidebarBankMeta">FPT Semester 3 • 1,594 câu</div>
+          <div class="sidebar-section-title">Danh mục môn học</div>
+          <div class="sidebar-section-sub" id="sidebarBankMeta">FPT Semester 3 · 1,594 câu</div>
         </div>
         <button class="sidebar-close-btn" id="sidebarCloseBtn" title="Đóng thanh danh mục" aria-label="Đóng thanh danh mục">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
 
@@ -178,7 +179,7 @@
           <div class="seb-actions-group">
             <div class="seb-timer-badge" id="sebTimerBadge">
               <span class="timer-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
               </span>
               <span id="sebTimerDisplay">60:00</span>
             </div>
@@ -193,7 +194,7 @@
         <div class="study-banner">
           <div class="banner-info">
             <h2 id="studyModuleTitle">FPT Semester 3: Toàn bộ 5 Môn</h2>
-            <p id="studyModuleDesc">1,594 câu hỏi trắc nghiệm &amp; giải thích chi tiết theo chuẩn ITExamAnswers.</p>
+            <p id="studyModuleDesc">1,594 câu hỏi trắc nghiệm và giải thích chi tiết</p>
           </div>
           <div class="study-controls">
             <button class="btn btn-outline btn-sm" id="toggleAnswersBtn">
@@ -237,7 +238,7 @@
         <div class="study-nav-rail" id="studyNavRail">
           <button class="study-nav-rail-toggle" id="studyNavRailToggle" title="Đóng / Mở bảng điều hướng câu hỏi">
             <span class="nav-rail-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
             </span>
             <span class="nav-rail-label">Số câu</span>
             <span class="nav-rail-badge" id="studyNavRailCount">0</span>
@@ -246,14 +247,14 @@
             <div class="study-nav-rail-header">
               <span class="rail-header-title">Điều hướng câu hỏi</span>
               <button class="rail-close-btn" id="studyNavRailCloseBtn" title="Đóng" aria-label="Đóng">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
             <div class="study-nav-rail-legend">
               <span class="rail-legend-item"><span class="legend-dot dot-active"></span> Đang xem</span>
               <span class="rail-legend-item">
                 <span class="legend-dot dot-starred">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                 </span>
                 Đã lưu
               </span>
@@ -289,7 +290,7 @@
             </div>
             <div class="exam-info-banner">
               <div>
-                <strong>Hướng dẫn:</strong> Chọn đáp án cho từng câu hỏi. Sử dụng bảng số bên trái để chuyển nhanh giữa các câu hỏi. Bấm <strong>Nộp bài</strong> để chấm điểm thang 1000 (Mốc Pass 750).
+                <strong>Hướng dẫn:</strong> Chọn đáp án bằng chuột hoặc phím <kbd class="kbd-hint">A</kbd>–<kbd class="kbd-hint">H</kbd>, chuyển câu bằng <kbd class="kbd-hint">←</kbd> / <kbd class="kbd-hint">→</kbd>. Nộp bài để chấm điểm thang 1000 (Mốc đạt 750)
               </div>
               <div>
                 <button class="btn btn-success btn-sm" id="submitExamTopBtn">Nộp bài</button>
@@ -303,7 +304,7 @@
               <div class="grid-container">
                 <div class="exam-palette-header">
                   <span class="exam-palette-title">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                       <rect x="3" y="3" width="7" height="7"></rect>
                       <rect x="14" y="3" width="7" height="7"></rect>
                       <rect x="14" y="14" width="7" height="7"></rect>
@@ -328,7 +329,7 @@
               <div class="exam-question-card" id="examQuestionCard">
                 <div class="exam-q-header">
                   <div class="exam-q-title" id="examQTitle">1. Question</div>
-                  <div class="exam-q-points" id="examQSubjectTag">CSD203 • 1 pt</div>
+                  <div class="exam-q-points" id="examQSubjectTag">CSD203 · 1 pt</div>
                 </div>
                 <div class="exam-q-body" id="examQText"></div>
                 <div id="examQCodeContainer"></div>
@@ -341,8 +342,8 @@
                     <button class="btn btn-outline btn-sm" id="btnClearAnswer">Xóa lựa chọn</button>
                   </div>
                   <div class="exam-nav-group">
-                    <button class="btn btn-outline" id="btnPrevQuestion">Câu trước</button>
-                    <button class="btn btn-primary" id="btnNextQuestion">Câu tiếp theo</button>
+                    <button class="btn btn-outline" id="btnPrevQuestion"><kbd class="kbd-hint">←</kbd> Câu trước</button>
+                    <button class="btn btn-primary" id="btnNextQuestion">Câu tiếp theo <kbd class="kbd-hint">→</kbd></button>
                     <button class="btn btn-success" id="btnSubmitExam">Nộp bài</button>
                   </div>
                 </div>
@@ -365,7 +366,7 @@
                 <span class="cisco-score-pts" id="scoreScaledPts">840</span>
                 <span class="cisco-score-max">/ 1000</span>
               </div>
-              <span class="cisco-pass-pill" id="scoreBadge">Đạt (Pass) • Chuẩn &ge; 750</span>
+              <span class="cisco-pass-pill" id="scoreBadge">Đạt (Pass) · Chuẩn &ge; 750</span>
             </div>
             <div class="cisco-cap-bar-wrap">
               <div class="cisco-cap-bar-head">
@@ -419,7 +420,7 @@
         <div class="study-banner">
           <div class="banner-info">
             <h2>Câu làm sai</h2>
-            <p id="mistakesSummaryText">Bạn chưa có câu nào làm sai.</p>
+            <p id="mistakesSummaryText">Bạn chưa có câu nào làm sai</p>
           </div>
           <div class="study-controls">
             <button class="btn btn-primary btn-sm" id="btnTestMistakesOnly">Luyện lại các câu sai</button>
@@ -433,8 +434,8 @@
       <section id="flashcardsView" class="view-panel" style="display: none;">
         <div class="study-banner">
           <div class="banner-info">
-            <h2 id="fcTitle">Flashcards • Ghi nhớ chủ động</h2>
-            <p id="fcSubTitle">Lật thẻ để xem đáp án đúng và giải thích. Hỗ trợ phím tắt Space (lật thẻ), ← / → (chuyển thẻ).</p>
+            <h2 id="fcTitle">Flashcards · Ghi nhớ chủ động</h2>
+            <p id="fcSubTitle">Lật thẻ để xem đáp án đúng và giải thích, hỗ trợ phím <kbd class="kbd-hint">Space</kbd>, <kbd class="kbd-hint">←</kbd>, <kbd class="kbd-hint">→</kbd></p>
           </div>
           <div class="study-controls">
             <button class="btn btn-outline btn-sm" id="fcShuffleBtn">Xáo trộn thẻ</button>
@@ -472,13 +473,13 @@
 
           <div class="fc-actions-bar">
             <div class="fc-btn-group">
-              <button class="btn btn-outline btn-sm" id="fcPrevBtn">← Thẻ trước</button>
-              <button class="btn btn-primary btn-sm" id="fcFlipBtn">Lật thẻ (Space)</button>
-              <button class="btn btn-outline btn-sm" id="fcNextBtn">Thẻ tiếp →</button>
+              <button class="btn btn-outline btn-sm" id="fcPrevBtn"><kbd class="kbd-hint">←</kbd> Thẻ trước</button>
+              <button class="btn btn-primary btn-sm" id="fcFlipBtn">Lật thẻ <kbd class="kbd-hint">Space</kbd></button>
+              <button class="btn btn-outline btn-sm" id="fcNextBtn">Thẻ tiếp <kbd class="kbd-hint">→</kbd></button>
             </div>
             <div class="fc-btn-group">
               <button class="btn btn-warning btn-sm" id="fcNeedReviewBtn">Cần ôn lại</button>
-              <button class="btn btn-success btn-sm" id="fcMasteredBtn">Đã nhớ ✓</button>
+              <button class="btn btn-success btn-sm" id="fcMasteredBtn">Đã nhớ</button>
             </div>
           </div>
         </div>
@@ -488,9 +489,9 @@
       <section id="statsView" class="view-panel">
         <div class="dash-hero-card">
           <div class="dash-hero-info">
-            <div class="dash-sys-tag">FPT University • Semester 3 • 5 Subjects Bank</div>
+            <div class="dash-sys-tag">FPT University · Semester 3 · 5 Subjects Bank</div>
             <h2 class="dash-hero-title">Dashboard tổng quan học tập</h2>
-            <p class="dash-hero-desc" id="dashHeroDesc">Theo dõi tiến độ câu hỏi đã làm, lịch sử hoạt động mỗi ngày và mức độ thành thạo từng môn học Kỳ 3.</p>
+            <p class="dash-hero-desc" id="dashHeroDesc">Theo dõi tiến độ câu hỏi đã làm, lịch sử hoạt động mỗi ngày và mức độ thành thạo từng môn học Kỳ 3</p>
             <div class="dash-overall-progress">
               <div class="dash-overall-meta">
                 <span>Tiến độ hoàn thành (Mốc Pass 75%: 1,196 / 1,594 câu)</span>
@@ -513,7 +514,7 @@
             <div class="dash-kpi-top">
               <span class="dash-kpi-label">Tổng câu đã làm</span>
               <span class="dash-kpi-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
               </span>
             </div>
             <div class="dash-kpi-val"><span id="dashKpiPracticed">0</span> <small id="dashKpiTotal">/ 1,594 câu</small></div>
@@ -527,7 +528,7 @@
             <div class="dash-kpi-top">
               <span class="dash-kpi-label">Điểm trung bình thi thử</span>
               <span class="dash-kpi-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
               </span>
             </div>
             <div class="dash-kpi-val"><span id="dashKpiAvgPts">--</span> <small>/ 1000</small></div>
@@ -541,7 +542,7 @@
             <div class="dash-kpi-top">
               <span class="dash-kpi-label">Chuỗi học liên tục</span>
               <span class="dash-kpi-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               </span>
             </div>
             <div class="dash-kpi-val"><span id="dashKpiStreak">0</span> <small>ngày liên tiếp</small></div>
@@ -555,13 +556,16 @@
             <div class="dash-kpi-top">
               <span class="dash-kpi-label">Cần củng cố</span>
               <span class="dash-kpi-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               </span>
             </div>
             <div class="dash-kpi-val"><span id="dashKpiMistakes" class="text-danger">0</span> <small>câu làm sai</small></div>
             <div class="dash-kpi-foot">
               <span class="dash-kpi-sub" id="dashKpiWeakMod">Chưa có câu sai</span>
-              <button class="btn-link-action" id="btnDashPracticeMistakes">Luyện ngay &rarr;</button>
+              <button class="btn-link-action" id="btnDashPracticeMistakes">
+                Luyện ngay
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </button>
             </div>
           </div>
         </div>
@@ -574,7 +578,7 @@
               <div class="dash-panel-head">
                 <div>
                   <h3 class="dash-panel-title">Tiến độ &amp; mức độ thành thạo Môn học</h3>
-                  <p class="dash-panel-sub">Theo dõi năng lực từng môn Kỳ 3 (CSD203, DBI202, IAO202, NWC303, JPD113) và vùng dưới 75%.</p>
+                  <p class="dash-panel-sub">Theo dõi năng lực từng môn Kỳ 3 (CSD203, DBI202, IAO202, NWC303, JPD113) và vùng dưới 75%</p>
                 </div>
                 <span class="dash-bench-tag">FU Semester 3 Benchmark</span>
               </div>
@@ -585,7 +589,7 @@
               <div class="dash-panel-head">
                 <div>
                   <h3 class="dash-panel-title">Lịch sử hoạt động mỗi ngày</h3>
-                  <p class="dash-panel-sub">Tự động ghi nhận số câu đã luyện và đề thi hoàn thành theo từng ngày.</p>
+                  <p class="dash-panel-sub">Tự động ghi nhận số câu đã luyện và đề thi hoàn thành theo từng ngày</p>
                 </div>
                 <span class="dash-bench-tag" id="dashActiveDaysCount">0 ngày hoạt động</span>
               </div>
@@ -609,7 +613,7 @@
               <div class="dash-panel-head">
                 <div>
                   <h3 class="dash-panel-title">Lịch sử thi &amp; luyện gần đây</h3>
-                  <p class="dash-panel-sub">Các lượt làm đề FE-Test và bài thi thử theo môn học mới nhất.</p>
+                  <p class="dash-panel-sub">Các lượt làm đề FE-Test và bài thi thử theo môn học mới nhất</p>
                 </div>
               </div>
               <div class="dash-table-wrap">
@@ -639,34 +643,34 @@
                 <button class="dash-shortcut-btn" id="dashShortcutCustomFe">
                   <div class="shortcut-top">
                     <span class="shortcut-badge">FE-Test</span>
-                    <span>&rarr;</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                   </div>
                   <div class="shortcut-title">Tạo đề tùy chỉnh</div>
-                  <div class="shortcut-desc">Chọn môn học, 20-60 câu, thời gian và bộ lọc câu hỏi.</div>
+                  <div class="shortcut-desc">Chọn môn học, 20-60 câu, thời gian và bộ lọc câu hỏi</div>
                 </button>
                 <button class="dash-shortcut-btn" id="dashShortcutPractice">
                   <div class="shortcut-top">
                     <span class="shortcut-badge badge-green">Luyện tập</span>
-                    <span>&rarr;</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                   </div>
                   <div class="shortcut-title">Luyện tập tức thì</div>
-                  <div class="shortcut-desc">Hiện đáp án và giải thích ngay sau mỗi câu trả lời.</div>
+                  <div class="shortcut-desc">Hiện đáp án và giải thích ngay sau mỗi câu trả lời</div>
                 </button>
                 <button class="dash-shortcut-btn" id="dashShortcutFlashcards">
                   <div class="shortcut-top">
                     <span class="shortcut-badge">Flashcards</span>
-                    <span>&rarr;</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                   </div>
                   <div class="shortcut-title">Luyện thẻ ghi nhớ</div>
-                  <div class="shortcut-desc">Ôn nhanh khái niệm &amp; câu hỏi theo từng môn và chủ đề.</div>
+                  <div class="shortcut-desc">Ôn nhanh khái niệm và câu hỏi theo từng môn và chủ đề</div>
                 </button>
                 <button class="dash-shortcut-btn" id="dashShortcutMistakes">
                   <div class="shortcut-top">
                     <span class="shortcut-badge badge-danger">Củng cố</span>
-                    <span>&rarr;</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                   </div>
                   <div class="shortcut-title">Ôn tập câu làm sai</div>
-                  <div class="shortcut-desc">Tập trung xử lý dứt điểm các câu trả lời sai.</div>
+                  <div class="shortcut-desc">Tập trung xử lý dứt điểm các câu trả lời sai</div>
                 </button>
               </div>
             </div>
@@ -675,7 +679,7 @@
               <div class="dash-panel-head">
                 <div>
                   <h3 class="dash-panel-title">Xu hướng điểm số</h3>
-                  <p class="dash-panel-sub">Biểu đồ điểm số (thang 1000) qua các lần thi gần nhất so với mốc đỗ (750).</p>
+                  <p class="dash-panel-sub">Biểu đồ điểm số (thang 1000) qua các lần thi gần nhất so với mốc đỗ (750)</p>
                 </div>
                 <span class="dash-trend-delta" id="dashTrendDelta">--</span>
               </div>
@@ -693,7 +697,7 @@
             <div class="fetest-builder-head">
               <div>
                 <h2 class="fetest-builder-title">Tạo đề FE - Test tùy chỉnh</h2>
-                <p class="fetest-builder-sub">Tùy chỉnh môn học, chế độ ôn tập, số câu hỏi, thời gian và bộ lọc trước khi bắt đầu.</p>
+                <p class="fetest-builder-sub">Tùy chỉnh môn học, chế độ ôn tập, số câu hỏi, thời gian và bộ lọc trước khi bắt đầu</p>
               </div>
             </div>
 
@@ -723,14 +727,14 @@
                 <button type="button" class="fetest-mode-card" data-femode="practice" id="feModePracticeBtn">
                   <div class="mode-card-top">
                     <span class="mode-card-title">Luyện tập</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
                   </div>
-                  <p class="mode-card-desc">Hiện đáp án và giải thích ngay sau mỗi câu trả lời.</p>
+                  <p class="mode-card-desc">Hiện đáp án và giải thích ngay sau mỗi câu trả lời</p>
                 </button>
                 <button type="button" class="fetest-mode-card active" data-femode="exam" id="feModeExamBtn">
                   <div class="mode-card-top">
                     <span class="mode-card-title">FE</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   </div>
                   <p class="mode-card-desc">SEB, chấm điểm khi nộp bài</p>
                 </button>
@@ -907,7 +911,7 @@
           </div>
         </div>
         <button class="modal-close-icon-btn" id="btnCloseTestMistakesModal" title="Đóng" aria-label="Đóng">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
       <div class="modal-body-scroll" id="testMistakesModalBody"></div>
